@@ -1,11 +1,12 @@
 type ButtonProps = {
-  children: React.ReactNode;
+  label: string; 
   onClick?: () => void;
   type?: "button" | "submit";
+  variant?: "primary" | "danger" | "success"; 
 };
 
 export default function Button({
-  children,
+  label,
   onClick,
   type = "button",
 }: ButtonProps) {
@@ -15,7 +16,7 @@ export default function Button({
       onClick={onClick}
       className="px-4 py-2 bg-black text-white rounded hover:bg-gray-800"
     >
-      {children}
+      {label}
     </button>
   );
 }
