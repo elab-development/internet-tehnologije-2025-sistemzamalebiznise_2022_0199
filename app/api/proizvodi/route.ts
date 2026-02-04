@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
     }
 
     const res = await query(
-      'INSERT INTO "Proizvod" (naziv, sifra, cena, kolicina_na_lageru, aktivan) VALUES ($1, $2, $3, $4, true) RETURNING *',
+      'INSERT INTO proizvod (naziv, sifra, cena, kolicina_na_lageru, aktivan) VALUES ($1, $2, $3, $4, true) RETURNING *',
       [naziv, sifra, cena, kolicina]
     );
 
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
 
 export async function GET() {
   try {
-    const result = await query('SELECT * FROM "Proizvod"');
+    const result = await query('SELECT * FROM proizvod');
     
     return NextResponse.json(result.rows || []); 
   } catch (error) {
