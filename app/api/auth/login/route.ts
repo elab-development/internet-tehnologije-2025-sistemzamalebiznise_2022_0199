@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 2. Provera da li korisnik postoji
-    const result = await query('SELECT * FROM korisnik WHERE email = $1', [email]);
+    const result = await query('SELECT * FROM "Korisnik" WHERE email = $1', [email]);
     const user = result.rows[0];
 
     if (!user) {
@@ -50,8 +50,12 @@ export async function POST(req: NextRequest) {
 
     return response;
 
-  } catch (error: any) {
-    console.error("Login error:", error);
-    return NextResponse.json({ error: "Greška na serveru" }, { status: 500 });
-  }
+ }  catch (error: any) {
+  // Ovo će ti ispisati tačan razlog u Thunder Client-u
+    return NextResponse.json({ 
+    error: error.message, 
+    detail: error.detail, // Postgres često ovde piše šta fali
+    code: error.code }, 
+    { status: 500 });
+    }
 }
