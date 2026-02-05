@@ -39,14 +39,20 @@ export default function NoviProizvodPage() {
         
         <Input label="Šifra" type="text" placeholder="npr. LPT-001" value={forma.sifra} 
                onChange={(e) => setForma({...forma, sifra: e.target.value})} />
-        
         <div className="grid grid-cols-2 gap-4">
-          <Input label="Cena (RSD)" type="text" placeholder="0.00" value={forma.cena.toString()} 
-                 onChange={(e) => setForma({...forma, cena: Number(e.target.value)})} />
-          
-          <Input label="Količina" type="text" placeholder="0" value={forma.kolicina.toString()} 
-                 onChange={(e) => setForma({...forma, kolicina: Number(e.target.value)})} />
-        </div>
+        <Input 
+              label="Cena (RSD)" 
+              type="number" 
+              placeholder="0.00" 
+              value={forma.cena} 
+              onChange={(e) => setForma({...forma, cena: parseFloat(e.target.value) || 0})}/>
+        <Input 
+              label="Količina" 
+              type="number" 
+              placeholder="0" 
+              value={forma.kolicina} 
+              onChange={(e) => setForma({...forma, kolicina: parseInt(e.target.value) || 0})}/>
+</div>
 
         <Button label="Sačuvaj proizvod" type="submit" />
       </form>
