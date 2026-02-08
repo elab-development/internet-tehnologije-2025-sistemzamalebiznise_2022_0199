@@ -70,6 +70,22 @@ export class ApiService {
   static deleteProduct(id: number) {
     return this.request(`/proizvodi/${id}`, { method: "DELETE" });
   }
+  static async getDashboard() {
+  const res = await fetch(`/api/dashboard`, {
+    method: "GET",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  const data = await res.json().catch(() => ({}));
+
+  if (!res.ok) {
+    throw new Error(data?.error || "Greška pri učitavanju dashboard-a");
+  }
+
+  return data;
+}
+
 
   // Dobavljači
   static getSuppliers() {
