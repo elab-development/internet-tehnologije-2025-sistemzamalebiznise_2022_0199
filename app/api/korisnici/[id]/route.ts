@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { query } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
+import { addCorsHeaders, handleOptions } from "@/lib/cors";
+export function OPTIONS(req: NextRequest) {
+  return handleOptions(req);
+}
 
 const DOZVOLJENE_ULOGE = ["VLASNIK", "RADNIK", "DOSTAVLJAC"];
 
@@ -10,7 +14,9 @@ export async function PATCH(
   ctx: { params: Promise<{ id: string }> }
 ) {
   try {
+    //proveriti
     const authUser = await requireAuth(req);
+    if (!authUser) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     if (!authUser) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -32,11 +38,11 @@ export async function PATCH(
     try {
       body = await req.json();
     } catch (err) {
-    return NextResponse.json(
-    { error: "Neispravan JSON body (pošalji npr. {\"uloga\":\"RADNIK\"})" },
-    { status: 400 }
-  );
-}
+      return NextResponse.json(
+        { error: "Neispravan JSON body (pošalji npr. {\"uloga\":\"RADNIK\"})" },
+        { status: 400 }
+      );
+    }
 
     const uloga = String(body?.uloga ?? "").trim();
 
@@ -61,7 +67,7 @@ export async function PATCH(
       UPDATE korisnik
       SET uloga = $1
       WHERE id_korisnik = $2
-      RETURNING id_korisnik AS "idKorisnik", ime, prezime, email, uloga
+      RETURNING id_korisnik AS "id_korisnik", ime, prezime, email, uloga
       `,
       [uloga, korisnikId]
     );
@@ -71,10 +77,7 @@ export async function PATCH(
     }
 
     return NextResponse.json({ korisnik: result.rows[0] });
-  } catch (err: any) {
-    return NextResponse.json(
-      { error: err?.message ?? "Server error" },
-      { status: 500 }
-    );
+  } catch (error: any) {
+    return addCorsHeaders(req, NextResponse.json({ error: error.message }, { status: 500 }));
   }
 }

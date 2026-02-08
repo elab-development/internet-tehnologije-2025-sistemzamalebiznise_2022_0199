@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import * as jose from "jose";
-
+import { addCorsHeaders, handleOptions } from "@/lib/cors";
+export function OPTIONS(req: NextRequest) {
+  return handleOptions(req);
+}
 export async function GET(req: NextRequest) {
   try {
     const token = req.cookies.get("token")?.value;

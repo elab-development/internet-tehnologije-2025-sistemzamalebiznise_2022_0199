@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import bcrypt from "bcryptjs";
+import { addCorsHeaders, handleOptions } from "@/lib/cors";
+export function OPTIONS(req: NextRequest) {
+  return handleOptions(req);
+}
 
 const DOZVOLJENE_ULOGE = ["VLASNIK", "RADNIK", "DOSTAVLJAC"] as const;
 
@@ -56,9 +60,6 @@ export async function POST(req: NextRequest) {
         { status: 409 }
       );
     }
-    return NextResponse.json(
-      { error: error?.message ?? "Server error" },
-      { status: 500 }
-    );
+    return addCorsHeaders(req, NextResponse.json({ error: error.message }, { status: 500 }));
   }
 }

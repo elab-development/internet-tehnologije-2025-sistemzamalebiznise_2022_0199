@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { requireAuth } from '@/lib/auth';
+import { addCorsHeaders, handleOptions } from "@/lib/cors";
+export function OPTIONS(req: NextRequest) {
+  return handleOptions(req);
+}
 
 const VALID_STATUS = ['KREIRANA','POSLATA','U_TRANSPORTU','ISPORUCENA','ZAVRSENA','OTKAZANA'] as const;
 const VALID_TIP = ['NABAVKA','PRODAJA'] as const;
@@ -8,9 +12,10 @@ const VALID_TIP = ['NABAVKA','PRODAJA'] as const;
 export async function GET(req: NextRequest) {
   try {
     const auth = await requireAuth(req);
-    if (!auth) return NextResponse.json({ error: "Nemate pristup" }, { status: 401 });
+    if (!auth) return addCorsHeaders(req, NextResponse.json({ error: "Nemate pristup" }, { status: 401 }));
 
     const searchParams = req.nextUrl.searchParams;
+    const status = searchParams.get("status");
     if (status && !VALID_STATUS.includes(status as any)) {
       return NextResponse.json({ error: "Neispravan status" }, { status: 400 });
 }
@@ -62,9 +67,9 @@ export async function GET(req: NextRequest) {
     sql += ` ORDER BY n.datum_kreiranja DESC`;
 
     const result = await query(sql, params);
-    return NextResponse.json(result.rows || []);
+    return addCorsHeaders(req, NextResponse.json(result.rows || []));
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return addCorsHeaders(req, NextResponse.json({ error: error.message }, { status: 500 }));
   }
 }
 

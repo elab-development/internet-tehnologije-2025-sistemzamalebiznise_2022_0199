@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { requireAuth } from '@/lib/auth';
+import { addCorsHeaders, handleOptions } from "@/lib/cors";
+export function OPTIONS(req: NextRequest) {
+  return handleOptions(req);
+}
 
 const VALID_STATUS = ['KREIRANA', 'POSLATA', 'U_TRANSPORTU', 'ISPORUCENA', 'ZAVRSENA', 'OTKAZANA'] as const;
 
@@ -10,10 +14,13 @@ export async function GET(
 ) {
   try {
     const auth = await requireAuth(req);
-    if (!auth) return NextResponse.json({ error: "Nemate pristup" }, { status: 401 });
+    if (!auth) return addCorsHeaders(req, NextResponse.json({ error: "Nemate pristup" }, { status: 401 }));
 
     const uloga = (auth as any).uloga;
     const userId = (auth as any).userId;
+//proveriti
+    const authUser = await requireAuth(req);
+    if (!authUser) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { id } = await params;
     const orderId = Number(id);
@@ -40,7 +47,7 @@ export async function GET(
 
     // Dostavljač sme samo svoju dodeljenu
     if (uloga === "DOSTAVLJAC" && headerRes.rows[0].dostavljac_id !== userId) {
-      return NextResponse.json({ error: "Nemate pristup ovoj narudžbenici" }, { status: 403 });
+      return addCorsHeaders(req, NextResponse.json({ error: "Nemate pristup" }, { status: 403 }));
     }
 
     const itemsRes = await query(
@@ -67,7 +74,7 @@ export async function PATCH(
 ) {
   try {
     const auth = await requireAuth(req);
-    if (!auth) return NextResponse.json({ error: "Nemate pristup" }, { status: 401 });
+    if (!auth) return addCorsHeaders(req, NextResponse.json({ error: "Nemate pristup" }, { status: 401 }));
 
     const { id } = await params;
     const orderId = Number(id);
@@ -176,7 +183,7 @@ export async function PATCH(
     }
 
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return addCorsHeaders(req, NextResponse.json({ error: error.message }, { status: 500 }));
   }
 }
 

@@ -8,12 +8,10 @@ export class ApiService {
       "Content-Type": "application/json",
     };
 
-    // Ako proslediš dodatne headere u options, ubaci ih
     if (options.headers) {
       Object.assign(headers, options.headers as Record<string, string>);
     }
 
-    // (opciono) Bearer token iz localStorage – ako ga koristiš na frontu
     if (typeof window !== "undefined") {
       const token = localStorage.getItem("token");
       if (token) headers["Authorization"] = `Bearer ${token}`;
@@ -22,7 +20,6 @@ export class ApiService {
     const res = await fetch(url, {
       ...options,
       headers,
-      // bitno za cookie auth (ako se oslanjaš na cookie "token")
       credentials: "include",
     });
 
@@ -60,7 +57,6 @@ export class ApiService {
   }
 
   static logout() {
-    // ako koristiš cookie logout endpoint
     return this.request("/auth/logout", { method: "POST" });
   }
 

@@ -1,8 +1,11 @@
-// app/api/korisnici/route.ts
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { query } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
+import { addCorsHeaders, handleOptions } from "@/lib/cors";
+export function OPTIONS(req: NextRequest) {
+  return handleOptions(req);
+}
 
 export async function GET(req: NextRequest) {
   try {
@@ -19,7 +22,7 @@ export async function GET(req: NextRequest) {
     const result = await query(
       `
       SELECT
-        id_korisnik AS "idKorisnik",
+        id_korisnik AS "id_korisnik",
         ime,
         prezime,
         email,
@@ -29,11 +32,8 @@ export async function GET(req: NextRequest) {
       `
     );
 
-    return NextResponse.json({ korisnici: result.rows });
-  } catch (err: any) {
-    return NextResponse.json(
-      { error: err?.message ?? "Server error" },
-      { status: 500 }
-    );
+    return addCorsHeaders(req, NextResponse.json({ korisnici: result.rows }));
+  } catch (error: any) {
+    return addCorsHeaders(req, NextResponse.json({ error: error.message }, { status: 500 }));
   }
 }

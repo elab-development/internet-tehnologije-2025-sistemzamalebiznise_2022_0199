@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { addCorsHeaders, handleOptions } from "@/lib/cors";
+export function OPTIONS(req: NextRequest) {
+  return handleOptions(req);
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -72,15 +76,13 @@ export async function POST(req: NextRequest) {
     response.cookies.set("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       maxAge: 86400,
       path: "/",
     });
 
     return response;
   } catch (error: any) {
-    return NextResponse.json(
-      { error: error?.message ?? "Server error" },
-      { status: 500 }
-    );
+    return addCorsHeaders(req, NextResponse.json({ error: error.message }, { status: 500 }));
   }
 }

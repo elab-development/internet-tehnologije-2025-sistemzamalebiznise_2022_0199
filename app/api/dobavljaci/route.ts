@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { requireAuth } from '@/lib/auth';
+import { addCorsHeaders, handleOptions } from "@/lib/cors";
+export function OPTIONS(req: NextRequest) {
+  return handleOptions(req);
+}
 
 export async function GET(req: NextRequest) {
   try {
@@ -10,16 +14,16 @@ export async function GET(req: NextRequest) {
       ORDER BY id_dobavljac DESC
     `);
 
-    return NextResponse.json(result.rows || []);
+    return addCorsHeaders(req, NextResponse.json(result.rows || []));
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return addCorsHeaders(req, NextResponse.json({ error: error.message }, { status: 500 }));
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
     const auth = await requireAuth(req);
-    if (!auth) return NextResponse.json({ error: "Nemate pristup" }, { status: 401 });
+    if (!auth) return addCorsHeaders(req, NextResponse.json({ error: "Nemate pristup" }, { status: 401 }));
 
     const { naziv_firme, telefon, email, adresa } = await req.json();
 

@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { requireAuth } from '@/lib/auth';
+import { addCorsHeaders, handleOptions } from "@/lib/cors";
+export function OPTIONS(req: NextRequest) {
+  return handleOptions(req);
+}
 
 export async function GET(
   req: NextRequest,
@@ -9,6 +13,11 @@ export async function GET(
   try {
     const { id } = await params;
     const productId = Number(id);
+//Proveriti
+    const authUser = await requireAuth(req);
+    if (!authUser) {
+      return addCorsHeaders(req, NextResponse.json({ error: "Nemate pristup" }, { status: 403 }));
+    }
 
     const result = await query(
       `SELECT id_proizvod, naziv, sifra, cena, kolicina_na_lageru, jedinica_mere
@@ -21,9 +30,9 @@ export async function GET(
       return NextResponse.json({ error: "Proizvod nije pronađen" }, { status: 404 });
     }
 
-    return NextResponse.json(result.rows[0]);
+    return addCorsHeaders(req, NextResponse.json(result.rows[0]));
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return addCorsHeaders(req, NextResponse.json({ error: error.message }, { status: 500 }));
   }
 }
 
@@ -64,9 +73,9 @@ export async function PUT(
     return NextResponse.json({ message: "Proizvod ažuriran", product: result.rows[0] });
   } catch (error: any) {
     if (error.code === '23505') {
-      return NextResponse.json({ error: "Šifra proizvoda već postoji" }, { status: 409 });
+      return addCorsHeaders(req, NextResponse.json({ error: "Šifra proizvoda već postoji" }, { status: 409 }));
     }
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return addCorsHeaders(req, NextResponse.json({ error: error.message }, { status: 500 }));
   }
 }
 
@@ -97,6 +106,6 @@ export async function DELETE(
 
     return NextResponse.json({ message: "Proizvod obrisan" });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return addCorsHeaders(req, NextResponse.json({ error: error.message }, { status: 500 }));
   }
 }
