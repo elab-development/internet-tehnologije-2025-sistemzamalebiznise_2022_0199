@@ -5,7 +5,16 @@ import jwt from "jsonwebtoken";
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    let body: any = {};
+    try {
+      body = await req.json();
+    } catch (error) {
+      return NextResponse.json(
+        { error: "Neispravan JSON body (pošalji email i lozinka)" },
+        { status: 400 }
+    );
+  }
+
 
     const email = String(body?.email ?? "").trim().toLowerCase();
     const lozinka = String(body?.lozinka ?? "");
