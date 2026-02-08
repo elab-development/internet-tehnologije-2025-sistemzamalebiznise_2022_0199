@@ -1,10 +1,11 @@
 import { NextResponse, NextRequest } from "next/server";
 import { addCorsHeaders, handleOptions } from "@/lib/cors";
+
 export function OPTIONS(req: NextRequest) {
   return handleOptions(req);
 }
 
-export async function POST() {
+export async function POST(req: NextRequest) {
   const response = NextResponse.json(
     { message: "Uspešno ste se odjavili" },
     { status: 200 }
@@ -16,5 +17,5 @@ export async function POST() {
     path: "/",
   });
 
-  return response;
+  return addCorsHeaders(req, response);
 }

@@ -13,21 +13,21 @@ export async function POST(req: NextRequest) {
     try {
       body = await req.json();
     } catch (error) {
-      return NextResponse.json(
+      return addCorsHeaders(req, NextResponse.json(
         { error: "Neispravan JSON body (pošalji email i lozinka)" },
         { status: 400 }
-    );
-  }
+      ));
+    }
 
 
     const email = String(body?.email ?? "").trim().toLowerCase();
     const lozinka = String(body?.lozinka ?? "");
 
     if (!email || !lozinka) {
-      return NextResponse.json(
+      return addCorsHeaders(req, NextResponse.json(
         { error: "Email i lozinka su obavezni" },
         { status: 400 }
-      );
+      ));
     }
 
     const result = await query(
@@ -37,18 +37,18 @@ export async function POST(req: NextRequest) {
     const user = result.rows[0];
 
     if (!user) {
-      return NextResponse.json(
+      return addCorsHeaders(req, NextResponse.json(
         { error: "Pogrešan email ili lozinka" },
         { status: 401 }
-      );
+      ));
     }
 
     const lozinkaTacna = await bcrypt.compare(lozinka, user.lozinka_hash);
     if (!lozinkaTacna) {
-      return NextResponse.json(
+      return addCorsHeaders(req, NextResponse.json(
         { error: "Pogrešan email ili lozinka" },
         { status: 401 }
-      );
+      ));
     }
 
     const jwtSecret = process.env.JWT_SECRET || "kljuc_za_jwt_token";
@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
       path: "/",
     });
 
-    return response;
+    return addCorsHeaders(req, response);
   } catch (error: any) {
     return addCorsHeaders(req, NextResponse.json({ error: error.message }, { status: 500 }));
   }

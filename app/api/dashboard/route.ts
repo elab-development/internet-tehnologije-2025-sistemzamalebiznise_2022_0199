@@ -76,7 +76,7 @@ export async function GET(req: NextRequest) {
       narudzbenicePoStatusu[r.status] = Number(r.cnt);
     }
 
-    return NextResponse.json({
+    return addCorsHeaders(req, NextResponse.json({
       counts: {
         proizvodi: Number(proizvodiRes.rows[0]?.cnt ?? 0),
         dobavljaci: Number(dobavljaciRes.rows[0]?.cnt ?? 0),
@@ -92,8 +92,8 @@ export async function GET(req: NextRequest) {
         po_statusu: narudzbenicePoStatusu,
         recent: recentRes.rows ?? [],
       },
-    });
+    }));
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return addCorsHeaders(req, NextResponse.json({ error: error.message }, { status: 500 }));
   }
 }

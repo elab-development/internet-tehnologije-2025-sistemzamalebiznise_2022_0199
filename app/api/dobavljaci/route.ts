@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
     const { naziv_firme, telefon, email, adresa } = await req.json();
 
     if (!naziv_firme) {
-      return NextResponse.json({ error: "Naziv firme je obavezan" }, { status: 400 });
+      return addCorsHeaders(req, NextResponse.json({ error: "Naziv firme je obavezan" }, { status: 400 }));
     }
 
     const result = await query(
@@ -38,8 +38,8 @@ export async function POST(req: NextRequest) {
       [naziv_firme, telefon ?? null, email ?? null, adresa ?? null]
     );
 
-    return NextResponse.json(result.rows[0], { status: 201 });
+    return addCorsHeaders(req, NextResponse.json(result.rows[0], { status: 201 }));
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return addCorsHeaders(req, NextResponse.json({ error: error.message }, { status: 500 }));
   }
 }

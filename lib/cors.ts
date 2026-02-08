@@ -5,7 +5,7 @@ const ALLOWED_ORIGINS = [
   "http://localhost:3000",
   "http://localhost:3001",
   // ovde dodaš Lovable domen kad ga dobiješ, npr:
-  // "https://tvoj-app.lovable.app",
+   "https://shop-scale-buddy.lovable.app",
 ];
 
 export function addCorsHeaders(req: NextRequest, res: NextResponse) {

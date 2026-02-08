@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
     const searchParams = req.nextUrl.searchParams;
     const status = searchParams.get("status");
     if (status && !VALID_STATUS.includes(status as any)) {
-      return NextResponse.json({ error: "Neispravan status" }, { status: 400 });
+      return addCorsHeaders(req, NextResponse.json({ error: "Neispravan status" }, { status: 400 }));
 }
 
 
@@ -76,22 +76,22 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const auth = await requireAuth(req);
-    if (!auth) return NextResponse.json({ error: "Nemate pristup" }, { status: 401 });
+    if (!auth) return addCorsHeaders(req, NextResponse.json({ error: "Nemate pristup" }, { status: 401 }));
 
     const { tip, dobavljac_id, napomena, stavke } = await req.json();
 
     if (!tip || !VALID_TIP.includes(tip) || !Array.isArray(stavke) || stavke.length === 0) {
-      return NextResponse.json(
+      return addCorsHeaders(req, NextResponse.json(
         { error: "Obavezno: tip (NABAVKA/PRODAJA) i stavke (niz)" },
         { status: 400 }
-      );
+      ));
     }
 
     if (tip === 'NABAVKA' && !dobavljac_id) {
-      return NextResponse.json({ error: "Za NABAVKA mora dobavljac_id" }, { status: 400 });
+      return addCorsHeaders(req, NextResponse.json({ error: "Za NABAVKA mora dobavljac_id" }, { status: 400 }));
     }
     if (tip === 'PRODAJA' && dobavljac_id) {
-      return NextResponse.json({ error: "Za PRODAJA dobavljac_id mora biti null" }, { status: 400 });
+      return addCorsHeaders(req, NextResponse.json({ error: "Za PRODAJA dobavljac_id mora biti null" }, { status: 400 }));
     }
 
     await query('BEGIN');
@@ -142,15 +142,15 @@ export async function POST(req: NextRequest) {
 
       await query('COMMIT');
 
-      return NextResponse.json(
-        { message: "Narudžbenica kreirana", id_narudzbenica: orderId, ukupna_vrednost: ukupno },
+      return addCorsHeaders(req, NextResponse.json(
+        { message: "NarudŻenica kreirana", id_narudzbenica: orderId, ukupna_vrednost: ukupno },
         { status: 201 }
-      );
+      ));
     } catch (e) {
       await query('ROLLBACK');
       throw e;
     }
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return addCorsHeaders(req, NextResponse.json({ error: error.message }, { status: 500 }));
   }
 }

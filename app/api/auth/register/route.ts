@@ -19,25 +19,25 @@ export async function POST(req: NextRequest) {
     const uloga = String(body?.uloga ?? "").trim();
 
     if (!ime || !prezime || !email || !lozinka || !uloga) {
-      return NextResponse.json(
+      return addCorsHeaders(req, NextResponse.json(
         { error: "Obavezno: ime, prezime, email, lozinka, uloga" },
         { status: 400 }
-      );
+      ));
     }
 
     if (!email.includes("@")) {
-      return NextResponse.json({ error: "Neispravan email" }, { status: 400 });
+      return addCorsHeaders(req, NextResponse.json({ error: "Neispravan email" }, { status: 400 }));
     }
 
     if (lozinka.length < 6) {
-      return NextResponse.json(
+      return addCorsHeaders(req, NextResponse.json(
         { error: "Lozinka mora imati najmanje 6 karaktera" },
         { status: 400 }
-      );
+      ));
     }
 
     if (!DOZVOLJENE_ULOGE.includes(uloga as any)) {
-      return NextResponse.json({ error: "Neispravna uloga" }, { status: 400 });
+      return addCorsHeaders(req, NextResponse.json({ error: "Neispravna uloga" }, { status: 400 }));
     }
 
     const hashedLozinka = await bcrypt.hash(lozinka, 10);
@@ -49,10 +49,10 @@ export async function POST(req: NextRequest) {
       [ime, prezime, email, hashedLozinka, uloga]
     );
 
-    return NextResponse.json(
+    return addCorsHeaders(req, NextResponse.json(
       { message: "Registrovan", user: result.rows[0] },
       { status: 201 }
-    );
+    ));
   } catch (error: any) {
     if (error?.code === "23505") {
       return NextResponse.json(

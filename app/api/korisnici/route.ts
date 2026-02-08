@@ -12,11 +12,11 @@ export async function GET(req: NextRequest) {
     const user = await requireAuth(req);
 
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return addCorsHeaders(req, NextResponse.json({ error: "Unauthorized" }, { status: 401 }));
     }
 
     if ((user as any).uloga !== "VLASNIK") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      return addCorsHeaders(req, NextResponse.json({ error: "Forbidden" }, { status: 403 }));
     }
 
     const result = await query(
