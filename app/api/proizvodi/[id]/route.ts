@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { requireAuth } from '@/lib/auth';
+import { addCorsHeaders, handleOptions } from "@/lib/cors";
+export function OPTIONS(req: NextRequest) {
+  return handleOptions(req);
+}
 
 export async function GET(
   req: NextRequest,
@@ -9,6 +13,11 @@ export async function GET(
   try {
     const { id } = await params;
     const productId = Number(id);
+//Proveriti
+    const authUser = await requireAuth(req);
+    if (!authUser) {
+      return addCorsHeaders(req, NextResponse.json({ error: "Nemate pristup" }, { status: 403 }));
+    }
 
     const result = await query(
       `SELECT id_proizvod, naziv, sifra, cena, kolicina_na_lageru, jedinica_mere
@@ -18,12 +27,12 @@ export async function GET(
     );
 
     if (result.rows.length === 0) {
-      return NextResponse.json({ error: "Proizvod nije pronađen" }, { status: 404 });
+      return addCorsHeaders(req, NextResponse.json({ error: "Proizvod nije pronađen" }, { status: 404 }));
     }
 
-    return NextResponse.json(result.rows[0]);
+    return addCorsHeaders(req, NextResponse.json(result.rows[0]));
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return addCorsHeaders(req, NextResponse.json({ error: error.message }, { status: 500 }));
   }
 }
 
@@ -33,11 +42,11 @@ export async function PUT(
 ) {
   try {
     const auth = await requireAuth(req);
-    if (!auth) return NextResponse.json({ error: "Nemate pristup" }, { status: 401 });
+    if (!auth) return addCorsHeaders(req, NextResponse.json({ error: "Nemate pristup" }, { status: 401 }));
 
     const uloga = (auth as any).uloga;
     if (uloga !== "VLASNIK") {
-      return NextResponse.json({ error: "Samo vlasnik može da menja proizvode" }, { status: 403 });
+      return addCorsHeaders(req, NextResponse.json({ error: "Samo vlasnik može da menja proizvode" }, { status: 403 }));
     }
 
     const { id } = await params;
@@ -58,15 +67,15 @@ export async function PUT(
     );
 
     if (result.rows.length === 0) {
-      return NextResponse.json({ error: "Proizvod nije pronađen" }, { status: 404 });
+      return addCorsHeaders(req, NextResponse.json({ error: "Proizvod nije pronađen" }, { status: 404 }));
     }
 
-    return NextResponse.json({ message: "Proizvod ažuriran", product: result.rows[0] });
+    return addCorsHeaders(req, NextResponse.json({ message: "Proizvod ažuriran", product: result.rows[0] }));
   } catch (error: any) {
     if (error.code === '23505') {
-      return NextResponse.json({ error: "Šifra proizvoda već postoji" }, { status: 409 });
+      return addCorsHeaders(req, NextResponse.json({ error: "Šifra proizvoda već postoji" }, { status: 409 }));
     }
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return addCorsHeaders(req, NextResponse.json({ error: error.message }, { status: 500 }));
   }
 }
 
@@ -76,11 +85,11 @@ export async function DELETE(
 ) {
   try {
     const auth = await requireAuth(req);
-    if (!auth) return NextResponse.json({ error: "Nemate pristup" }, { status: 401 });
+    if (!auth) return addCorsHeaders(req, NextResponse.json({ error: "Nemate pristup" }, { status: 401 }));
 
     const uloga = (auth as any).uloga;
     if (uloga !== "VLASNIK") {
-      return NextResponse.json({ error: "Samo vlasnik može da briše proizvode" }, { status: 403 });
+      return addCorsHeaders(req, NextResponse.json({ error: "Samo vlasnik može da briše proizvode" }, { status: 403 }));
     }
 
     const { id } = await params;
@@ -92,11 +101,11 @@ export async function DELETE(
     );
 
     if (result.rows.length === 0) {
-      return NextResponse.json({ error: "Proizvod nije pronađen" }, { status: 404 });
+      return addCorsHeaders(req, NextResponse.json({ error: "Proizvod nije pronađen" }, { status: 404 }));
     }
 
-    return NextResponse.json({ message: "Proizvod obrisan" });
+    return addCorsHeaders(req, NextResponse.json({ message: "Proizvod obrisan" }));
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return addCorsHeaders(req, NextResponse.json({ error: error.message }, { status: 500 }));
   }
 }

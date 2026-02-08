@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
+import { addCorsHeaders, handleOptions } from "@/lib/cors";
+export function OPTIONS(req: NextRequest) {
+  return handleOptions(req);
+}
 
 export async function GET(req: NextRequest) {
   try {
     // Ako ti dashboard treba samo za ulogovane:
     const auth = await requireAuth(req);
     if (!auth) {
-      return NextResponse.json({ error: "Nemate pristup" }, { status: 401 });
+      if (!auth) return addCorsHeaders(req, NextResponse.json({ error: "Nemate pristup" }, { status: 401 }));
     }
 
     // 1) Osnovne brojke
@@ -72,7 +76,7 @@ export async function GET(req: NextRequest) {
       narudzbenicePoStatusu[r.status] = Number(r.cnt);
     }
 
-    return NextResponse.json({
+    return addCorsHeaders(req, NextResponse.json({
       counts: {
         proizvodi: Number(proizvodiRes.rows[0]?.cnt ?? 0),
         dobavljaci: Number(dobavljaciRes.rows[0]?.cnt ?? 0),
@@ -88,8 +92,8 @@ export async function GET(req: NextRequest) {
         po_statusu: narudzbenicePoStatusu,
         recent: recentRes.rows ?? [],
       },
-    });
+    }));
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return addCorsHeaders(req, NextResponse.json({ error: error.message }, { status: 500 }));
   }
 }
