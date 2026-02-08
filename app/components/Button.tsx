@@ -1,21 +1,33 @@
 type ButtonProps = {
-  children: React.ReactNode;
+  label: string; 
   onClick?: () => void;
-  type?: "button" | "submit";
+  type?: "button" | "submit" | "reset";
+  variant?: "primary" | "danger" | "success";
+  disabled?: boolean;
 };
 
 export default function Button({
-  children,
+  label,
   onClick,
   type = "button",
+  variant = "primary",
+  disabled = false
 }: ButtonProps) {
+  
+  const bgColors = {
+    primary: "bg-black hover:bg-gray-800 disabled:bg-gray-400",
+    success: "bg-green-600 hover:bg-green-700 disabled:bg-gray-400",
+    danger: "bg-red-600 hover:bg-red-700 disabled:bg-gray-400"
+  };
+
   return (
     <button
       type={type}
       onClick={onClick}
-      className="px-4 py-2 bg-black text-white rounded hover:bg-gray-800"
+      disabled={disabled}
+      className={`w-full px-4 py-2 text-white rounded transition disabled:cursor-not-allowed ${bgColors[variant]}`}
     >
-      {children}
+      {label}
     </button>
   );
 }

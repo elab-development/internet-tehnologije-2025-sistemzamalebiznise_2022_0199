@@ -1,74 +1,67 @@
+"use client";
+import { useEffect, useState } from "react";
+import ProductCard from "../components/ProductCard";
+
 type Proizvod = {
-  id: number;
+  id_proizvod: number;
   naziv: string;
   sifra: string;
   cena: number;
-  kolicinaNaLageru: number;
+  kolicina_na_lageru: number;
 };
 
-const mockProizvodi: Proizvod[] = [
-  {
-    id: 1,
-    naziv: "Sok od narandže",
-    sifra: "P-001",
-    cena: 150,
-    kolicinaNaLageru: 120,
-  },
-  {
-    id: 2,
-    naziv: "Voda 0.5L",
-    sifra: "P-002",
-    cena: 80,
-    kolicinaNaLageru: 300,
-  },
-  {
-    id: 3,
-    naziv: "Energetsko piće",
-    sifra: "P-003",
-    cena: 220,
-    kolicinaNaLageru: 45,
-  },
-];
-
 export default function ProizvodiPage() {
-  return (
-    <main style={{ padding: 24 }}>
-      <h1 style={{ fontSize: 24, marginBottom: 16 }}>Proizvodi</h1>
-        <a
-    href="/narudzbenice/nova"
-    style={{
-        display: "inline-block",
-        marginBottom: 16,
-        padding: "8px 12px",
-        backgroundColor: "#2563eb",
-        color: "white",
-        textDecoration: "none",
-        borderRadius: 4,
-    }}
-    >
-  Nova narudžbenica
-</a>
+  const [proizvodi, setProizvodi] = useState<Proizvod[]>([]);
+  const [loading, setLoading] = useState(true);
 
-      <table border={1} cellPadding={8} cellSpacing={0} width="100%">
-        <thead>
-          <tr>
-            <th>Naziv</th>
-            <th>Šifra</th>
-            <th>Cena (RSD)</th>
-            <th>Lager</th>
-          </tr>
-        </thead>
-        <tbody>
-          {mockProizvodi.map((p) => (
-            <tr key={p.id}>
-              <td>{p.naziv}</td>
-              <td>{p.sifra}</td>
-              <td>{p.cena}</td>
-              <td>{p.kolicinaNaLageru}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+  useEffect(() => {
+    fetch("/api/proizvodi")
+      .then((res) => res.json())
+      .then((data) => {
+        
+        if (Array.isArray(data)) {
+          setProizvodi(data);
+        } else {
+          console.error("API nije vratio niz:", data);
+          setProizvodi([]);
+        }
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Greška pri učitavanju:", err);
+        setProizvodi([]); 
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) return <p className="p-10 text-black">Učitavanje proizvoda...</p>;
+
+  return (
+    <main className="p-8 bg-white min-h-screen text-black">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">Katalog Proizvoda</h1>
+        <a
+          href="/proizvodi/novo"
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+        >
+          + Dodaj novi proizvod
+        </a>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {proizvodi.map((p) => (
+          <ProductCard 
+            key={p.id_proizvod} 
+            naziv={p.naziv} 
+            cena={p.cena} 
+            sifra={p.sifra} 
+          />
+        ))}
+      </div>
+      
+      {proizvodi.length === 0 && (
+        <p className="text-gray-500 mt-10 text-center">Trenutno nema proizvoda u bazi.</p>
+      )}
     </main>
   );
 }

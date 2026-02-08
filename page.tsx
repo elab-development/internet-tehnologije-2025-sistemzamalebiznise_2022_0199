@@ -1,8 +1,27 @@
 "use client";
 
-import { useState } from "react";
-import Button from "./components/Button";
-import Input from "./components/Input";
+import { useState, ChangeEvent } from "react";
+
+type InputProps = {
+  label: string;
+  type?: string;
+  value: string;
+  onChange: (e: ChangeEvent<HTMLInputElement>) => void;
+};
+
+function Input({ label, type = "text", value, onChange }: InputProps) {
+  return (
+    <label className="flex flex-col text-sm">
+      <span className="mb-1">{label}</span>
+      <input
+        className="border px-3 py-2 rounded"
+        type={type}
+        value={value}
+        onChange={onChange}
+      />
+    </label>
+  );
+}
 
 
 export default function LoginPage() {
@@ -31,7 +50,12 @@ export default function LoginPage() {
           onChange={(e) => setLozinka(e.target.value)}
         />
 
-        <Button onClick={handleSubmit}>Prijavi se</Button>
+        <button
+          onClick={handleSubmit}
+          className="px-4 py-2 bg-blue-600 text-white rounded"
+        >
+          Prijavi se
+        </button>
       </div>
     </main>
   );
