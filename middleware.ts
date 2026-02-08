@@ -1,43 +1,42 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
-import { jwtVerify } from 'jose';
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
-export async function middleware(request: NextRequest) {
-  const token = request.cookies.get('token')?.value;
-  const pathname = request.nextUrl.pathname;
+const JAVNE_RUTE = ["/", "/registracija"]; // stranice koje smeju bez logina
 
-  // Routes that should be protected
-  const protectedRoutes = [
-    '/dashboard',
-    '/narudzbenice',
-    '/proizvodi',
-    '/dobavljaci',
-  ];
+export function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl;
 
-  const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
-
-  // Allow public routes
-  if (pathname === '/login' || pathname === '/') {
+  // pusti Next statiku
+  if (
+    pathname.startsWith("/_next") ||
+    pathname.startsWith("/favicon.ico") ||
+    pathname.startsWith("/images") ||
+    pathname.startsWith("/public")
+  ) {
     return NextResponse.next();
   }
 
-  if (isProtectedRoute) {
-    if (!token) {
-      return NextResponse.redirect(new URL('/login', request.url));
-    }
+  // pusti auth API rute
+  if (pathname.startsWith("/api/auth")) {
+    return NextResponse.next();
+  }
 
-    try {
-      const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'kljuc_za_jwt_token');
-      await jwtVerify(token, secret);
-      return NextResponse.next();
-    } catch (error) {
-      return NextResponse.redirect(new URL('/login', request.url));
-    }
+  // pusti javne stranice
+  if (JAVNE_RUTE.includes(pathname)) {
+    return NextResponse.next();
+  }
+
+  // sve ostalo zahteva token cookie
+  const token = req.cookies.get("token")?.value;
+  if (!token) {
+    const url = req.nextUrl.clone();
+    url.pathname = "/"; // početna = login
+    return NextResponse.redirect(url);
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/narudzbenice/:path*', '/proizvodi/:path*', '/dobavljaci/:path*'],
+  matcher: ["/((?!api).*)", "/api/:path*"],
 };

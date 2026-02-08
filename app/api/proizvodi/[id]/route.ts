@@ -35,6 +35,11 @@ export async function PUT(
     const auth = await requireAuth(req);
     if (!auth) return NextResponse.json({ error: "Nemate pristup" }, { status: 401 });
 
+    const uloga = (auth as any).uloga;
+    if (uloga !== "VLASNIK") {
+      return NextResponse.json({ error: "Samo vlasnik može da menja proizvode" }, { status: 403 });
+    }
+
     const { id } = await params;
     const productId = Number(id);
 
@@ -73,10 +78,14 @@ export async function DELETE(
     const auth = await requireAuth(req);
     if (!auth) return NextResponse.json({ error: "Nemate pristup" }, { status: 401 });
 
+    const uloga = (auth as any).uloga;
+    if (uloga !== "VLASNIK") {
+      return NextResponse.json({ error: "Samo vlasnik može da briše proizvode" }, { status: 403 });
+    }
+
     const { id } = await params;
     const productId = Number(id);
 
-    // UML nema "aktivan" → hard delete
     const result = await query(
       `DELETE FROM proizvod WHERE id_proizvod = $1 RETURNING id_proizvod`,
       [productId]
@@ -88,7 +97,6 @@ export async function DELETE(
 
     return NextResponse.json({ message: "Proizvod obrisan" });
   } catch (error: any) {
-    // Ako postoji FK u stavkama narudžbenice → neće dati da obrišeš (to je ok)
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

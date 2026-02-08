@@ -7,8 +7,14 @@ const VALID_TIP = ['NABAVKA','PRODAJA'] as const;
 
 export async function GET(req: NextRequest) {
   try {
+    const auth = await requireAuth(req);
+    if (!auth) return NextResponse.json({ error: "Nemate pristup" }, { status: 401 });
+
     const searchParams = req.nextUrl.searchParams;
-    const status = searchParams.get('status');
+    const status = searchParams.get("status");
+
+    const uloga = (auth as any).uloga;
+    const userId = (auth as any).userId;
 
     let sql = `
       SELECT
@@ -21,6 +27,7 @@ export async function GET(req: NextRequest) {
         n.pdf_putanja,
         n.kreirao_id,
         n.dobavljac_id,
+        n.dostavljac_id,
         d.naziv_firme as dobavljac_naziv,
         k.email as kreirao_email
       FROM narudzbenica n
@@ -29,9 +36,24 @@ export async function GET(req: NextRequest) {
     `;
 
     const params: any[] = [];
+    const where: string[] = [];
+
+    // filter po statusu (ako je prosleđen)
     if (status) {
-      sql += ` WHERE n.status = $1`;
+      where.push(`n.status = $${params.length + 1}`);
       params.push(status);
+    }
+
+    // RBAC: dostavljač vidi samo svoje dodeljene
+    if (uloga === "DOSTAVLJAC") {
+      where.push(`n.dostavljac_id = $${params.length + 1}`);
+      params.push(userId);
+    }
+
+    // (vlasnik i radnik vide sve) — nema dodatnog where uslova
+
+    if (where.length > 0) {
+      sql += ` WHERE ` + where.join(" AND ");
     }
 
     sql += ` ORDER BY n.datum_kreiranja DESC`;
