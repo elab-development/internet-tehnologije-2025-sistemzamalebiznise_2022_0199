@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { requireAuth } from '@/lib/auth';
+import { addCorsHeaders, handleOptions } from "@/lib/cors";
+export function OPTIONS(req: NextRequest) {
+  return handleOptions(req);
+}
 
 const VALID_STATUS = ['KREIRANA', 'POSLATA', 'U_TRANSPORTU', 'ISPORUCENA', 'ZAVRSENA', 'OTKAZANA'] as const;
 
@@ -10,15 +14,18 @@ export async function GET(
 ) {
   try {
     const auth = await requireAuth(req);
-    if (!auth) return NextResponse.json({ error: "Nemate pristup" }, { status: 401 });
+    if (!auth) return addCorsHeaders(req, NextResponse.json({ error: "Nemate pristup" }, { status: 401 }));
 
     const uloga = (auth as any).uloga;
     const userId = (auth as any).userId;
+//proveriti
+    const authUser = await requireAuth(req);
+    if (!authUser) return addCorsHeaders(req, NextResponse.json({ error: "Unauthorized" }, { status: 401 }));
 
     const { id } = await params;
     const orderId = Number(id);
     if (!Number.isFinite(orderId)) {
-      return NextResponse.json({ error: "Neispravan ID" }, { status: 400 });
+      return addCorsHeaders(req, NextResponse.json({ error: "Neispravan ID" }, { status: 400 }));
     }
 
     const headerRes = await query(
@@ -35,12 +42,12 @@ export async function GET(
     );
 
     if (headerRes.rows.length === 0) {
-      return NextResponse.json({ error: "Narudžbenica nije pronađena" }, { status: 404 });
+      return addCorsHeaders(req, NextResponse.json({ error: "NarudŻenica nije pronađena" }, { status: 404 }));
     }
 
     // Dostavljač sme samo svoju dodeljenu
     if (uloga === "DOSTAVLJAC" && headerRes.rows[0].dostavljac_id !== userId) {
-      return NextResponse.json({ error: "Nemate pristup ovoj narudžbenici" }, { status: 403 });
+      return addCorsHeaders(req, NextResponse.json({ error: "Nemate pristup" }, { status: 403 }));
     }
 
     const itemsRes = await query(
@@ -53,9 +60,9 @@ export async function GET(
       [orderId]
     );
 
-    return NextResponse.json({ ...headerRes.rows[0], stavke: itemsRes.rows });
+    return addCorsHeaders(req, NextResponse.json({ ...headerRes.rows[0], stavke: itemsRes.rows }));
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return addCorsHeaders(req, NextResponse.json({ error: error.message }, { status: 500 }));
   }
 }
 
@@ -67,13 +74,13 @@ export async function PATCH(
 ) {
   try {
     const auth = await requireAuth(req);
-    if (!auth) return NextResponse.json({ error: "Nemate pristup" }, { status: 401 });
+    if (!auth) return addCorsHeaders(req, NextResponse.json({ error: "Nemate pristup" }, { status: 401 }));
 
     const { id } = await params;
     const orderId = Number(id);
     let body: any = {};
     try { body = await req.json(); }
-    catch { return NextResponse.json({ error: "Neispravan JSON body" }, { status: 400 }); }
+    catch { return addCorsHeaders(req, NextResponse.json({ error: "Neispravan JSON body" }, { status: 400 })); }
 
     const { status, dostavljac_id } = body;
 
@@ -82,15 +89,15 @@ export async function PATCH(
 
     // samo vlasnik i dostavljač menjaju status
     if (uloga !== "VLASNIK" && uloga !== "DOSTAVLJAC") {
-      return NextResponse.json({ error: "Nemate pravo da menjate status" }, { status: 403 });
+      return addCorsHeaders(req, NextResponse.json({ error: "Nemate pravo da menjate status" }, { status: 403 }));
     }
 
 
     if (!status || !VALID_STATUS.includes(status)) {
-      return NextResponse.json(
+      return addCorsHeaders(req, NextResponse.json(
         { error: "Nevalidan status" },
         { status: 400 }
-      );
+      ));
     }
 
     await query('BEGIN');
@@ -105,19 +112,19 @@ export async function PATCH(
       // dostavljač sme samo svoju
       if (uloga === "DOSTAVLJAC" && dodeljeni !== userId) {
         await query('ROLLBACK');
-        return NextResponse.json({ error: "Nemate pristup ovoj narudžbenici" }, { status: 403 });
+        return addCorsHeaders(req, NextResponse.json({ error: "Nemate pristup ovoj narudŻenici" }, { status: 403 }));
       }
 
       // samo vlasnik sme da dodeli dostavljača
       if (dostavljac_id !== undefined && uloga !== "VLASNIK") {
         await query('ROLLBACK');
-        return NextResponse.json({ error: "Samo vlasnik može da dodeli dostavljača" }, { status: 403 });
+        return addCorsHeaders(req, NextResponse.json({ error: "Samo vlasnik može da dodeli dostavljača" }, { status: 403 }));
       }
 
 
       if (curRes.rows.length === 0) {
         await query('ROLLBACK');
-        return NextResponse.json({ error: "Narudžbenica nije pronađena" }, { status: 404 });
+        return addCorsHeaders(req, NextResponse.json({ error: "NarudŻenica nije pronađena" }, { status: 404 }));
       }
 
       const stariStatus = curRes.rows[0].status;
@@ -169,14 +176,14 @@ export async function PATCH(
 
       await query('COMMIT');
 
-      return NextResponse.json({ message: "Status ažuriran", order: updRes.rows[0] });
+      return addCorsHeaders(req, NextResponse.json({ message: "Status ažuriran", order: updRes.rows[0] }));
     } catch (e) {
       await query('ROLLBACK');
       throw e;
     }
 
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return addCorsHeaders(req, NextResponse.json({ error: error.message }, { status: 500 }));
   }
 }
 
@@ -187,14 +194,14 @@ export async function DELETE(
   try {
 
     const auth = await requireAuth(req);
-    if (!auth) return NextResponse.json({ error: "Nemate pristup" }, { status: 401 });
+    if (!auth) return addCorsHeaders(req, NextResponse.json({ error: "Nemate pristup" }, { status: 401 }));
 
     const { id } = await params;
     const orderId = Number(id);
 
     const uloga = (auth as any).uloga;
     if (uloga !== "VLASNIK") {
-      return NextResponse.json({ error: "Samo vlasnik može da briše narudžbenice" }, { status: 403 });
+      return addCorsHeaders(req, NextResponse.json({ error: "Samo vlasnik može da briše narudžbenice" }, { status: 403 }));
     }
 
     const checkRes = await query(
@@ -203,21 +210,21 @@ export async function DELETE(
     );
 
     if (checkRes.rows.length === 0) {
-      return NextResponse.json({ error: "Narudžbenica nije pronađena" }, { status: 404 });
+      return addCorsHeaders(req, NextResponse.json({ error: "Narudžbenica nije pronađena" }, { status: 404 }));
     }
 
     if (checkRes.rows[0].status !== 'KREIRANA') {
-      return NextResponse.json(
+      return addCorsHeaders(req, NextResponse.json(
         { error: "Možeš obrisati samo narudžbenice u statusu KREIRANA" },
         { status: 400 }
-      );
+      ));
     }
 
     await query(`DELETE FROM stavka_narudzbenice WHERE narudzbenica_id = $1`, [orderId]);
     await query(`DELETE FROM narudzbenica WHERE id_narudzbenica = $1`, [orderId]);
 
-    return NextResponse.json({ message: "Narudžbenica obrisana" });
+    return addCorsHeaders(req, NextResponse.json({ message: "Narudžbenica obrisana" }));
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return addCorsHeaders(req, NextResponse.json({ error: error.message }, { status: 500 }));
   }
 }
