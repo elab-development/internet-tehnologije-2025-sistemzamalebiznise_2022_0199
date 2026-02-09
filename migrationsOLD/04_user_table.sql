@@ -1,8 +1,0 @@
-CREATE TABLE IF NOT EXISTS korisnik (
-    id_korisnik SERIAL PRIMARY KEY,
-    ime VARCHAR(100) NOT NULL,
-    prezime VARCHAR(100) NOT NULL,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    lozinka TEXT NOT NULL,
-    datum_kreiranja TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
