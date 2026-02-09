@@ -98,6 +98,10 @@ export class ApiService {
     return this.request(`/narudzbenice${q}`);
   }
 
+  static getOrder(id: number) {
+    return this.request(`/narudzbenice/${id}`);
+  }
+
   static createOrder(order: any) {
     return this.request("/narudzbenice", { method: "POST", body: JSON.stringify(order) });
   }
@@ -107,5 +111,9 @@ export class ApiService {
       method: "PATCH",
       body: JSON.stringify({ status }),
     });
+  }
+
+  static deleteOrder(id: number) {
+    return this.request(`/narudzbenice/${id}`, { method: "DELETE" });
   }
 }
