@@ -8,7 +8,6 @@ export function OPTIONS(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   try {
-    // Ako ti dashboard treba samo za ulogovane:
     const auth = await requireAuth(req);
     if (!auth) {
       if (!auth) return addCorsHeaders(req, NextResponse.json({ error: "Nemate pristup" }, { status: 401 }));
@@ -19,7 +18,7 @@ export async function GET(req: NextRequest) {
     const dobavljaciRes = await query(`SELECT COUNT(*)::int AS cnt FROM dobavljac`);
     const korisniciRes = await query(`SELECT COUNT(*)::int AS cnt FROM korisnik`);
 
-    // 2) Lager: ukupna kolicina i ukupna vrednost (po UML: cena * kolicina_na_lageru)
+    // 2) Lager: ukupna kolicina i ukupna vrednost 
     const lagerRes = await query(`
       SELECT
         COALESCE(SUM(kolicina_na_lageru), 0)::int AS ukupna_kolicina,
@@ -36,7 +35,7 @@ export async function GET(req: NextRequest) {
       GROUP BY tip
     `);
 
-    // 4) Narudžbenice: po statusima (UML)
+    // 4) Narudžbenice: po statusima 
     const narudzbeniceStatusRes = await query(`
       SELECT status, COUNT(*)::int AS cnt
       FROM narudzbenica

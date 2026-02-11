@@ -13,7 +13,7 @@ export async function GET(
   try {
     const { id } = await params;
     const productId = Number(id);
-//Proveriti
+    //proveriti
     const authUser = await requireAuth(req);
     if (!authUser) {
       return addCorsHeaders(req, NextResponse.json({ error: "Nemate pristup" }, { status: 403 }));
@@ -54,16 +54,10 @@ export async function PUT(
 
     const { naziv, sifra, cena, kolicina_na_lageru, jedinica_mere } = await req.json();
 
+    // Poziv SQL funkcije iz migracije 02_funkcije_izmena.sql
     const result = await query(
-      `UPDATE proizvod SET
-        naziv = COALESCE($1, naziv),
-        sifra = COALESCE($2, sifra),
-        cena = COALESCE($3, cena),
-        kolicina_na_lageru = COALESCE($4, kolicina_na_lageru),
-        jedinica_mere = COALESCE($5, jedinica_mere)
-       WHERE id_proizvod = $6
-       RETURNING id_proizvod, naziv, sifra, cena, kolicina_na_lageru, jedinica_mere`,
-      [naziv, sifra, cena, kolicina_na_lageru, jedinica_mere, productId]
+      `SELECT * FROM izmeni_proizvod($1, $2, $3, $4, $5, $6)`,
+      [productId, naziv, sifra, cena, kolicina_na_lageru, jedinica_mere]
     );
 
     if (result.rows.length === 0) {
@@ -95,8 +89,9 @@ export async function DELETE(
     const { id } = await params;
     const productId = Number(id);
 
+    // Poziv SQL funkcije iz migracije 03_funkcije_brisanje.sql
     const result = await query(
-      `DELETE FROM proizvod WHERE id_proizvod = $1 RETURNING id_proizvod`,
+      `SELECT obrisi_proizvod($1) AS id_proizvod`,
       [productId]
     );
 

@@ -1,36 +1,104 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+============================================================
+  POSTUPAK ZA POKRETANJE PROJEKTA - KORAK PO KORAK
+============================================================
 
-## Getting Started
+PREDUSLOV: Mora biti instaliran Docker Desktop, Node.js i npm.
 
-First, run the development server:
+============================================================
+KORAK 1: POKRETANJE DOCKER DESKTOP-A
+============================================================
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Otvori Docker Desktop sa Start menija.
+Sacekaj da se potpuno pokrene (zelena ikona u taskbar-u).
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+============================================================
+KORAK 2: POKRETANJE BAZE PODATAKA (PostgreSQL)
+============================================================
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Otvori PowerShell terminal i pokreni:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+  cd C:\Users\Marijana\Documents\FON\ITEH\ITEH_PROJEKAT\internet-tehnologije-2025-sistemzamalebiznise_2022_0199
+  docker-compose up -d
 
-## Learn More
+Sacekaj 10 sekundi da se PostgreSQL inicijalizuje.
 
-To learn more about Next.js, take a look at the following resources:
+============================================================
+KORAK 3: KREIRANJE TABELA U BAZI (migracija)
+============================================================
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+U istom terminalu pokreni:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+  Get-Content "migrations\00_uml_schema.sql" | docker exec -i (docker ps --format "{{.Names}}" | Select-Object -First 1) psql -U admin -d iteh_baza
 
-## Deploy on Vercel
+Trebalo bi da vidis: DROP TABLE, CREATE TYPE, CREATE TABLE, CREATE INDEX itd.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+NAPOMENA: Ovo je potrebno samo PRVI PUT ili ako zelis da resetujes bazu.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+============================================================
+KORAK 4: POKRETANJE BACKEND-A (Next.js API server)
+============================================================
+
+U istom terminalu pokreni:
+
+  cd C:\Users\Marijana\Documents\FON\ITEH\ITEH_PROJEKAT\internet-tehnologije-2025-sistemzamalebiznise_2022_0199
+  npm install
+  npm run dev
+
+Backend ce raditi na: http://localhost:3000
+API endpoint:         http://localhost:3000/api
+
+NAPOMENA: npm install je potreban samo PRVI PUT.
+NAPOMENA: Ovaj terminal OSTAJE OTVOREN dok radis sa aplikacijom.
+
+============================================================
+KORAK 5: POKRETANJE FRONTEND-A (Vite React app)
+============================================================
+
+Otvori NOVI PowerShell terminal (ne zatvaraj prethodni!) i pokreni:
+
+  cd C:\Users\Marijana\Documents\FON\ITEH\ITEH_PROJEKAT\internet-tehnologije-2025-sistemzamalebiznise_2022_0199\front\shop-scale-buddy
+  npm install
+  npm run dev
+
+Frontend ce raditi na: http://localhost:8080
+
+NAPOMENA: npm install je potreban samo PRVI PUT.
+NAPOMENA: Ovaj terminal OSTAJE OTVOREN dok radis sa aplikacijom.
+
+============================================================
+KORAK 6: OTVARANJE APLIKACIJE
+============================================================
+
+Otvori browser i idi na: http://localhost:8080
+
+- Registracija: http://localhost:8080/register
+- Login:        http://localhost:8080/login
+- Dashboard:    http://localhost:8080/dashboard (potrebna prijava)
+
+============================================================
+GASENJE SVEGA
+============================================================
+
+1. U terminalu gde radi frontend: Ctrl + C
+2. U terminalu gde radi backend:  Ctrl + C
+3. Za gasenje baze:
+   cd C:\Users\Marijana\Documents\FON\ITEH\ITEH_PROJEKAT\internet-tehnologije-2025-sistemzamalebiznise_2022_0199
+   docker-compose down
+
+============================================================
+REZIME - STA RADI NA KOM PORTU
+============================================================
+
+  PostgreSQL baza:   localhost:5432  (user: admin, pass: admin, db: iteh_baza)
+  Backend API:       localhost:3000  (Next.js)
+  Frontend:          localhost:8080  (Vite React)
+
+============================================================
+CEST PROBLEM: "Greska 500" ili "Failed to fetch"
+============================================================
+
+1. Proveri da li je Docker Desktop pokrenut
+2. Proveri da li je baza pokrenuta:  docker ps
+3. Proveri da li je backend pokrenut (terminal sa npm run dev)
+4. Proveri da li je frontend pokrenut (drugi terminal sa npm run dev)
+5. Ako nista ne pomaze, resetuj bazu (ponovi Korak 3)

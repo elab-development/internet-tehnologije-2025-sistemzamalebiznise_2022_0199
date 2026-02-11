@@ -1,12 +1,3 @@
--- =====================================================
--- 00_uml_schema.sql
--- JEDINA I ISTINITA SHEMA – USKLAĐENA SA UML DIJAGRAMOM
--- =====================================================
-
--- =========================
--- DROP POSTOJEĆE OBJEKTE
--- =========================
-
 DROP TABLE IF EXISTS stavka_narudzbenice CASCADE;
 DROP TABLE IF EXISTS narudzbenica CASCADE;
 DROP TABLE IF EXISTS proizvod CASCADE;
@@ -25,9 +16,6 @@ DO $$ BEGIN
   END IF;
 END $$;
 
--- =========================
--- ENUM TIPOVI (UML)
--- =========================
 
 CREATE TYPE uloga_korisnika AS ENUM (
   'VLASNIK',
@@ -49,9 +37,6 @@ CREATE TYPE status_narudzbenice AS ENUM (
   'OTKAZANA'
 );
 
--- =========================
--- TABELE (UML)
--- =========================
 
 CREATE TABLE korisnik (
   id_korisnik SERIAL PRIMARY KEY,
@@ -88,17 +73,14 @@ CREATE TABLE narudzbenica (
   ukupna_vrednost DOUBLE PRECISION NOT NULL DEFAULT 0 CHECK (ukupna_vrednost >= 0),
   pdf_putanja TEXT,
 
-  -- kreirao: Korisnik
   kreirao_id INT NOT NULL
     REFERENCES korisnik(id_korisnik)
     ON DELETE RESTRICT,
 
-  -- dobavljač: samo za NABAVKA
   dobavljac_id INT NULL
     REFERENCES dobavljac(id_dobavljac)
     ON DELETE SET NULL,
 
-  -- (potrebno zbog use-case: dodeljene narudžbenice dostavljaču)
   dostavljac_id INT NULL
     REFERENCES korisnik(id_korisnik)
     ON DELETE SET NULL,
@@ -125,21 +107,9 @@ CREATE TABLE stavka_narudzbenice (
     ON DELETE CASCADE
 );
 
--- =========================
--- INDEKSI (performanse)
--- =========================
 
-CREATE INDEX idx_narudzbenica_kreirao
-  ON narudzbenica(kreirao_id);
-
-CREATE INDEX idx_narudzbenica_dobavljac
-  ON narudzbenica(dobavljac_id);
-
-CREATE INDEX idx_narudzbenica_dostavljac
-  ON narudzbenica(dostavljac_id);
-
-CREATE INDEX idx_stavka_narudzbenica
-  ON stavka_narudzbenice(narudzbenica_id);
-
-CREATE INDEX idx_stavka_proizvod
-  ON stavka_narudzbenice(proizvod_id);
+CREATE INDEX idx_narudzbenica_kreirao ON narudzbenica(kreirao_id);
+CREATE INDEX idx_narudzbenica_dobavljac ON narudzbenica(dobavljac_id);
+CREATE INDEX idx_narudzbenica_dostavljac ON narudzbenica(dostavljac_id);
+CREATE INDEX idx_stavka_narudzbenica ON stavka_narudzbenice(narudzbenica_id);
+CREATE INDEX idx_stavka_proizvod ON stavka_narudzbenice(proizvod_id);

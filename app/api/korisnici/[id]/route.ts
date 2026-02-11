@@ -16,17 +16,16 @@ export async function PATCH(
   try {
     //proveriti
     const authUser = await requireAuth(req);
-    if (!authUser) return addCorsHeaders(req, NextResponse.json({ error: "Unauthorized" }, { status: 401 }));
 
     if (!authUser) {
-      return addCorsHeaders(req, NextResponse.json({ error: "Unauthorized" }, { status: 401 }));
+      return addCorsHeaders(req, NextResponse.json({ error: "Niste prijavljeni" }, { status: 401 }));
     }
 
     if ((authUser as any).uloga !== "VLASNIK") {
-      return addCorsHeaders(req, NextResponse.json({ error: "Forbidden" }, { status: 403 }));
+      return addCorsHeaders(req, NextResponse.json({ error: "Nemate pristup" }, { status: 403 }));
     }
 
-    const { id } = await ctx.params; // ✅ Next traži await
+    const { id } = await ctx.params; 
     const idStr = String(id ?? "").trim();
 
     if (!/^\d+$/.test(idStr)) {
@@ -47,7 +46,7 @@ export async function PATCH(
     const uloga = String(body?.uloga ?? "").trim();
 
     if (!uloga) {
-      return addCorsHeaders(req, NextResponse.json({ error: "Moraš poslati uloga" }, { status: 400 }));
+      return addCorsHeaders(req, NextResponse.json({ error: "Uloga je obavezna" }, { status: 400 }));
     }
 
     if (!DOZVOLJENE_ULOGE.includes(uloga)) {
@@ -57,7 +56,7 @@ export async function PATCH(
     const authId = Number((authUser as any).userId);
     if (korisnikId === authId) {
       return addCorsHeaders(req, NextResponse.json(
-        { error: "Ne možes promeniti sopstvenu ulogu" },
+        { error: "Ne možete promeniti sopstvenu ulogu" },
         { status: 400 }
       ));
     }

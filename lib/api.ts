@@ -1,6 +1,6 @@
 const RAW_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:3000/api";
 
-// Normalizuj: ukloni trailing slash da URL ne bude dupliran
+
 const API_BASE = RAW_BASE.endsWith("/") ? RAW_BASE.slice(0, -1) : RAW_BASE;
 
 type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
@@ -10,7 +10,7 @@ export class ApiService {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
-    // endpoint obavezno počinje sa "/"
+    
     const path = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
     const url = `${API_BASE}${path}`;
 
@@ -18,7 +18,6 @@ export class ApiService {
       "Content-Type": "application/json",
     };
 
-    // Spoji custom headers ako postoje
     if (options.headers) {
       Object.assign(headers, options.headers as Record<string, string>);
     }
@@ -26,7 +25,6 @@ export class ApiService {
     const res = await fetch(url, {
       ...options,
       headers,
-    // KLJUČNO: cookie auth (HTTP-only token)
       credentials: "include",
     });
 

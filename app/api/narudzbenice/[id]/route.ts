@@ -18,9 +18,9 @@ export async function GET(
 
     const uloga = (auth as any).uloga;
     const userId = (auth as any).userId;
-//proveriti
+    //proveriti
     const authUser = await requireAuth(req);
-    if (!authUser) return addCorsHeaders(req, NextResponse.json({ error: "Unauthorized" }, { status: 401 }));
+    if (!authUser) return addCorsHeaders(req, NextResponse.json({ error: "Niste prijavljeni" }, { status: 401 }));
 
     const { id } = await params;
     const orderId = Number(id);
@@ -42,7 +42,7 @@ export async function GET(
     );
 
     if (headerRes.rows.length === 0) {
-      return addCorsHeaders(req, NextResponse.json({ error: "NarudŻenica nije pronađena" }, { status: 404 }));
+      return addCorsHeaders(req, NextResponse.json({ error: "Narudžbenica nije pronađena" }, { status: 404 }));
     }
 
     // Dostavljač sme samo svoju dodeljenu
@@ -67,7 +67,7 @@ export async function GET(
 }
 
 
-// Promena statusa + ažuriranje lagera kad se završi narudžbenica
+// Promena statusa i ažuriranje lagera kad se završi narudžbenica
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -112,7 +112,7 @@ export async function PATCH(
       // dostavljač sme samo svoju
       if (uloga === "DOSTAVLJAC" && dodeljeni !== userId) {
         await query('ROLLBACK');
-        return addCorsHeaders(req, NextResponse.json({ error: "Nemate pristup ovoj narudŻenici" }, { status: 403 }));
+        return addCorsHeaders(req, NextResponse.json({ error: "Nemate pristup ovoj narudžbenici" }, { status: 403 }));
       }
 
       // samo vlasnik sme da dodeli dostavljača
@@ -124,7 +124,7 @@ export async function PATCH(
 
       if (curRes.rows.length === 0) {
         await query('ROLLBACK');
-        return addCorsHeaders(req, NextResponse.json({ error: "NarudŻenica nije pronađena" }, { status: 404 }));
+        return addCorsHeaders(req, NextResponse.json({ error: "Narudžbenica nije pronađena" }, { status: 404 }));
       }
 
       const stariStatus = curRes.rows[0].status;

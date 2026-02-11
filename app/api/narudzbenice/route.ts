@@ -58,7 +58,7 @@ export async function GET(req: NextRequest) {
       params.push(userId);
     }
 
-    // (vlasnik i radnik vide sve) — nema dodatnog where uslova
+    // vlasnik i radnik vide sve
 
     if (where.length > 0) {
       sql += ` WHERE ` + where.join(" AND ");
