@@ -2,19 +2,32 @@ import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { addCorsHeaders, handleOptions } from "@/lib/cors";
+export function OPTIONS(req: NextRequest) {
+  return handleOptions(req);
+}
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    let body: any = {};
+    try {
+      body = await req.json();
+    } catch (error) {
+      return addCorsHeaders(req, NextResponse.json(
+        { error: "Neispravan JSON body (pošalji email i lozinka)" },
+        { status: 400 }
+      ));
+    }
+
 
     const email = String(body?.email ?? "").trim().toLowerCase();
     const lozinka = String(body?.lozinka ?? "");
 
     if (!email || !lozinka) {
-      return NextResponse.json(
+      return addCorsHeaders(req, NextResponse.json(
         { error: "Email i lozinka su obavezni" },
         { status: 400 }
-      );
+      ));
     }
 
     const result = await query(
@@ -24,18 +37,18 @@ export async function POST(req: NextRequest) {
     const user = result.rows[0];
 
     if (!user) {
-      return NextResponse.json(
+      return addCorsHeaders(req, NextResponse.json(
         { error: "Pogrešan email ili lozinka" },
         { status: 401 }
-      );
+      ));
     }
 
     const lozinkaTacna = await bcrypt.compare(lozinka, user.lozinka_hash);
     if (!lozinkaTacna) {
-      return NextResponse.json(
+      return addCorsHeaders(req, NextResponse.json(
         { error: "Pogrešan email ili lozinka" },
         { status: 401 }
-      );
+      ));
     }
 
     const jwtSecret = process.env.JWT_SECRET || "kljuc_za_jwt_token";
@@ -63,15 +76,13 @@ export async function POST(req: NextRequest) {
     response.cookies.set("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       maxAge: 86400,
       path: "/",
     });
 
-    return response;
+    return addCorsHeaders(req, response);
   } catch (error: any) {
-    return NextResponse.json(
-      { error: error?.message ?? "Server error" },
-      { status: 500 }
-    );
+    return addCorsHeaders(req, NextResponse.json({ error: error.message }, { status: 500 }));
   }
 }

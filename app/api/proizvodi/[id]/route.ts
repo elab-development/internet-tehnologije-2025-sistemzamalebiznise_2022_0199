@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { requireAuth } from '@/lib/auth';
+import { addCorsHeaders, handleOptions } from "@/lib/cors";
+export function OPTIONS(req: NextRequest) {
+  return handleOptions(req);
+}
 
 export async function GET(
   req: NextRequest,
@@ -9,6 +13,11 @@ export async function GET(
   try {
     const { id } = await params;
     const productId = Number(id);
+    //proveriti
+    const authUser = await requireAuth(req);
+    if (!authUser) {
+      return addCorsHeaders(req, NextResponse.json({ error: "Nemate pristup" }, { status: 403 }));
+    }
 
     const result = await query(
       `SELECT id_proizvod, naziv, sifra, cena, kolicina_na_lageru, jedinica_mere
@@ -18,12 +27,12 @@ export async function GET(
     );
 
     if (result.rows.length === 0) {
-      return NextResponse.json({ error: "Proizvod nije pronađen" }, { status: 404 });
+      return addCorsHeaders(req, NextResponse.json({ error: "Proizvod nije pronađen" }, { status: 404 }));
     }
 
-    return NextResponse.json(result.rows[0]);
+    return addCorsHeaders(req, NextResponse.json(result.rows[0]));
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return addCorsHeaders(req, NextResponse.json({ error: error.message }, { status: 500 }));
   }
 }
 
@@ -33,35 +42,34 @@ export async function PUT(
 ) {
   try {
     const auth = await requireAuth(req);
-    if (!auth) return NextResponse.json({ error: "Nemate pristup" }, { status: 401 });
+    if (!auth) return addCorsHeaders(req, NextResponse.json({ error: "Nemate pristup" }, { status: 401 }));
+
+    const uloga = (auth as any).uloga;
+    if (uloga !== "VLASNIK") {
+      return addCorsHeaders(req, NextResponse.json({ error: "Samo vlasnik može da menja proizvode" }, { status: 403 }));
+    }
 
     const { id } = await params;
     const productId = Number(id);
 
     const { naziv, sifra, cena, kolicina_na_lageru, jedinica_mere } = await req.json();
 
+    // Poziv SQL funkcije iz migracije 02_funkcije_izmena.sql
     const result = await query(
-      `UPDATE proizvod SET
-        naziv = COALESCE($1, naziv),
-        sifra = COALESCE($2, sifra),
-        cena = COALESCE($3, cena),
-        kolicina_na_lageru = COALESCE($4, kolicina_na_lageru),
-        jedinica_mere = COALESCE($5, jedinica_mere)
-       WHERE id_proizvod = $6
-       RETURNING id_proizvod, naziv, sifra, cena, kolicina_na_lageru, jedinica_mere`,
-      [naziv, sifra, cena, kolicina_na_lageru, jedinica_mere, productId]
+      `SELECT * FROM izmeni_proizvod($1, $2, $3, $4, $5, $6)`,
+      [productId, naziv, sifra, cena, kolicina_na_lageru, jedinica_mere]
     );
 
     if (result.rows.length === 0) {
-      return NextResponse.json({ error: "Proizvod nije pronađen" }, { status: 404 });
+      return addCorsHeaders(req, NextResponse.json({ error: "Proizvod nije pronađen" }, { status: 404 }));
     }
 
-    return NextResponse.json({ message: "Proizvod ažuriran", product: result.rows[0] });
+    return addCorsHeaders(req, NextResponse.json({ message: "Proizvod ažuriran", product: result.rows[0] }));
   } catch (error: any) {
     if (error.code === '23505') {
-      return NextResponse.json({ error: "Šifra proizvoda već postoji" }, { status: 409 });
+      return addCorsHeaders(req, NextResponse.json({ error: "Šifra proizvoda već postoji" }, { status: 409 }));
     }
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return addCorsHeaders(req, NextResponse.json({ error: error.message }, { status: 500 }));
   }
 }
 
@@ -71,24 +79,28 @@ export async function DELETE(
 ) {
   try {
     const auth = await requireAuth(req);
-    if (!auth) return NextResponse.json({ error: "Nemate pristup" }, { status: 401 });
+    if (!auth) return addCorsHeaders(req, NextResponse.json({ error: "Nemate pristup" }, { status: 401 }));
+
+    const uloga = (auth as any).uloga;
+    if (uloga !== "VLASNIK") {
+      return addCorsHeaders(req, NextResponse.json({ error: "Samo vlasnik može da briše proizvode" }, { status: 403 }));
+    }
 
     const { id } = await params;
     const productId = Number(id);
 
-    // UML nema "aktivan" → hard delete
+    // Poziv SQL funkcije iz migracije 03_funkcije_brisanje.sql
     const result = await query(
-      `DELETE FROM proizvod WHERE id_proizvod = $1 RETURNING id_proizvod`,
+      `SELECT obrisi_proizvod($1) AS id_proizvod`,
       [productId]
     );
 
     if (result.rows.length === 0) {
-      return NextResponse.json({ error: "Proizvod nije pronađen" }, { status: 404 });
+      return addCorsHeaders(req, NextResponse.json({ error: "Proizvod nije pronađen" }, { status: 404 }));
     }
 
-    return NextResponse.json({ message: "Proizvod obrisan" });
+    return addCorsHeaders(req, NextResponse.json({ message: "Proizvod obrisan" }));
   } catch (error: any) {
-    // Ako postoji FK u stavkama narudžbenice → neće dati da obrišeš (to je ok)
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return addCorsHeaders(req, NextResponse.json({ error: error.message }, { status: 500 }));
   }
 }

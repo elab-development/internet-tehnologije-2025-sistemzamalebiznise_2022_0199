@@ -1,14 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { requireAuth } from '@/lib/auth';
+import { addCorsHeaders, handleOptions } from "@/lib/cors";
+export function OPTIONS(req: NextRequest) {
+  return handleOptions(req);
+}
 
 const VALID_STATUS = ['KREIRANA','POSLATA','U_TRANSPORTU','ISPORUCENA','ZAVRSENA','OTKAZANA'] as const;
 const VALID_TIP = ['NABAVKA','PRODAJA'] as const;
 
 export async function GET(req: NextRequest) {
   try {
+    const auth = await requireAuth(req);
+    if (!auth) return addCorsHeaders(req, NextResponse.json({ error: "Nemate pristup" }, { status: 401 }));
+
     const searchParams = req.nextUrl.searchParams;
-    const status = searchParams.get('status');
+    const status = searchParams.get("status");
+    if (status && !VALID_STATUS.includes(status as any)) {
+      return addCorsHeaders(req, NextResponse.json({ error: "Neispravan status" }, { status: 400 }));
+}
+
+
+    const uloga = (auth as any).uloga;
+    const userId = (auth as any).userId;
 
     let sql = `
       SELECT
@@ -21,6 +35,7 @@ export async function GET(req: NextRequest) {
         n.pdf_putanja,
         n.kreirao_id,
         n.dobavljac_id,
+        n.dostavljac_id,
         d.naziv_firme as dobavljac_naziv,
         k.email as kreirao_email
       FROM narudzbenica n
@@ -29,39 +44,54 @@ export async function GET(req: NextRequest) {
     `;
 
     const params: any[] = [];
+    const where: string[] = [];
+
+    // filter po statusu (ako je prosleđen)
     if (status) {
-      sql += ` WHERE n.status = $1`;
+      where.push(`n.status = $${params.length + 1}`);
       params.push(status);
+    }
+
+    // RBAC: dostavljač vidi samo svoje dodeljene
+    if (uloga === "DOSTAVLJAC") {
+      where.push(`n.dostavljac_id = $${params.length + 1}`);
+      params.push(userId);
+    }
+
+    // vlasnik i radnik vide sve
+
+    if (where.length > 0) {
+      sql += ` WHERE ` + where.join(" AND ");
     }
 
     sql += ` ORDER BY n.datum_kreiranja DESC`;
 
     const result = await query(sql, params);
-    return NextResponse.json(result.rows || []);
+    return addCorsHeaders(req, NextResponse.json(result.rows || []));
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return addCorsHeaders(req, NextResponse.json({ error: error.message }, { status: 500 }));
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
     const auth = await requireAuth(req);
-    if (!auth) return NextResponse.json({ error: "Nemate pristup" }, { status: 401 });
+    if (!auth) return addCorsHeaders(req, NextResponse.json({ error: "Nemate pristup" }, { status: 401 }));
 
     const { tip, dobavljac_id, napomena, stavke } = await req.json();
 
     if (!tip || !VALID_TIP.includes(tip) || !Array.isArray(stavke) || stavke.length === 0) {
-      return NextResponse.json(
+      return addCorsHeaders(req, NextResponse.json(
         { error: "Obavezno: tip (NABAVKA/PRODAJA) i stavke (niz)" },
         { status: 400 }
-      );
+      ));
     }
 
     if (tip === 'NABAVKA' && !dobavljac_id) {
-      return NextResponse.json({ error: "Za NABAVKA mora dobavljac_id" }, { status: 400 });
+      return addCorsHeaders(req, NextResponse.json({ error: "Za NABAVKA mora dobavljac_id" }, { status: 400 }));
     }
     if (tip === 'PRODAJA' && dobavljac_id) {
-      return NextResponse.json({ error: "Za PRODAJA dobavljac_id mora biti null" }, { status: 400 });
+      return addCorsHeaders(req, NextResponse.json({ error: "Za PRODAJA dobavljac_id mora biti null" }, { status: 400 }));
     }
 
     await query('BEGIN');
@@ -112,15 +142,15 @@ export async function POST(req: NextRequest) {
 
       await query('COMMIT');
 
-      return NextResponse.json(
-        { message: "Narudžbenica kreirana", id_narudzbenica: orderId, ukupna_vrednost: ukupno },
+      return addCorsHeaders(req, NextResponse.json(
+        { message: "NarudŻenica kreirana", id_narudzbenica: orderId, ukupna_vrednost: ukupno },
         { status: 201 }
-      );
+      ));
     } catch (e) {
       await query('ROLLBACK');
       throw e;
     }
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return addCorsHeaders(req, NextResponse.json({ error: error.message }, { status: 500 }));
   }
 }

@@ -1,156 +1,191 @@
-// API Service for all endpoints
-interface ApiResponse<T> {
-  data?: T;
-  message?: string;
-  error?: string;
-}
+const RAW_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:3000/api";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000/api';
+
+const API_BASE = RAW_BASE.endsWith("/") ? RAW_BASE.slice(0, -1) : RAW_BASE;
+
+type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
 export class ApiService {
-  static async request<T>(
+  private static async request<T>(
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
-    const url = `${API_BASE}${endpoint}`;
-    const headers = {
-      'Content-Type': 'application/json',
-      ...options.headers,
+    
+    const path = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+    const url = `${API_BASE}${path}`;
+
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
     };
 
-    // Get token from localStorage
-    if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('token');
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
+    if (options.headers) {
+      Object.assign(headers, options.headers as Record<string, string>);
     }
 
-    const response = await fetch(url, {
+    const res = await fetch(url, {
       ...options,
       headers,
+      credentials: "include",
     });
 
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: 'Unknown error' }));
-      throw new Error(error.error || error.message || `HTTP ${response.status}`);
+    // Pokušaj da parsiraš JSON i kad je error
+    const data = await res.json().catch(() => ({} as any));
+
+    if (!res.ok) {
+      // backend vraća { error: "..." }
+      const msg =
+        (data as any)?.error ||
+        (data as any)?.message ||
+        `HTTP ${res.status} ${res.statusText}`;
+      throw new Error(msg);
     }
 
-    return response.json();
+    return data as T;
   }
 
-  // Auth
-  static async login(email: string, lozinka: string) {
-    const data = await this.request('/auth/login', {
-      method: 'POST',
+  // AUTH
+  static login(email: string, lozinka: string) {
+    return this.request<{ message?: string; user?: any }>("/auth/login", {
+      method: "POST",
       body: JSON.stringify({ email, lozinka }),
     });
-    if (data.token) {
-      localStorage.setItem('token', data.token);
-    }
-    return data;
   }
 
-  static async register(username: string, email: string, lozinka: string) {
-    return this.request('/auth/register', {
-      method: 'POST',
-      body: JSON.stringify({ username, email, lozinka }),
+  static register(data: {
+    ime: string;
+    prezime: string;
+    email: string;
+    lozinka: string;
+    uloga: "VLASNIK" | "RADNIK" | "DOSTAVLJAC";
+  }) {
+    return this.request<{ message?: string; user?: any }>("/auth/register", {
+      method: "POST",
+      body: JSON.stringify(data),
     });
   }
 
-  static async getCurrentUser() {
-    return this.request('/auth/me');
+  static getCurrentUser() {
+    return this.request<{ user: any }>("/auth/me", { method: "GET" });
   }
 
   static logout() {
-    localStorage.removeItem('token');
+    return this.request<{ message?: string }>("/auth/logout", {
+      method: "POST",
+    });
   }
 
-  // Products
-  static async getProducts() {
-    return this.request('/proizvodi');
+  // DASHBOARD
+  static getDashboard() {
+    return this.request<any>("/dashboard", { method: "GET" });
   }
 
-  static async getProduct(id: number) {
-    return this.request(`/proizvodi/${id}`);
+  // PROIZVODI
+  static getProducts() {
+    return this.request<any[]>("/proizvodi", { method: "GET" });
   }
 
-  static async createProduct(product: any) {
-    return this.request('/proizvodi', {
-      method: 'POST',
+  static getProductById(id: number) {
+    return this.request<any>(`/proizvodi/${id}`, { method: "GET" });
+  }
+
+  static createProduct(product: {
+    naziv: string;
+    sifra: string;
+    cena: number;
+    kolicina_na_lageru: number;
+    jedinica_mere: string;
+  }) {
+    return this.request<any>("/proizvodi", {
+      method: "POST",
       body: JSON.stringify(product),
     });
   }
 
-  static async updateProduct(id: number, product: any) {
-    return this.request(`/proizvodi/${id}`, {
-      method: 'PUT',
+  static updateProduct(id: number, product: Partial<{
+    naziv: string;
+    sifra: string;
+    cena: number;
+    kolicina_na_lageru: number;
+    jedinica_mere: string;
+  }>) {
+    return this.request<any>(`/proizvodi/${id}`, {
+      method: "PUT",
       body: JSON.stringify(product),
     });
   }
 
-  static async deleteProduct(id: number) {
-    return this.request(`/proizvodi/${id}`, {
-      method: 'DELETE',
+  static deleteProduct(id: number) {
+    return this.request<{ message?: string }>(`/proizvodi/${id}`, {
+      method: "DELETE",
     });
   }
 
-  // Categories
-  static async getCategories() {
-    return this.request('/kategorije');
+  // DOBAVLJAČI
+  static getSuppliers() {
+    return this.request<any[]>("/dobavljaci", { method: "GET" });
   }
 
-  static async createCategory(category: any) {
-    return this.request('/kategorije', {
-      method: 'POST',
-      body: JSON.stringify(category),
+  static createSupplier(data: {
+    naziv_firme: string;
+    telefon?: string | null;
+    email?: string | null;
+    adresa?: string | null;
+  }) {
+    return this.request<any>("/dobavljaci", {
+      method: "POST",
+      body: JSON.stringify(data),
     });
   }
 
-  // Suppliers
-  static async getSuppliers() {
-    return this.request('/dobavljaci');
+  // NARUDŽBENICE
+  static getOrders(status?: string) {
+    const q = status ? `?status=${encodeURIComponent(status)}` : "";
+    return this.request<any[]>(`/narudzbenice${q}`, { method: "GET" });
   }
 
-  static async createSupplier(supplier: any) {
-    return this.request('/dobavljaci', {
-      method: 'POST',
-      body: JSON.stringify(supplier),
-    });
+  static getOrderById(id: number) {
+    return this.request<any>(`/narudzbenice/${id}`, { method: "GET" });
   }
 
-  // Orders
-  static async getOrders(status?: string) {
-    const query = status ? `?status=${status}` : '';
-    return this.request(`/narudzbenice${query}`);
-  }
-
-  static async getOrder(id: number) {
-    return this.request(`/narudzbenice/${id}`);
-  }
-
-  static async createOrder(order: any) {
-    return this.request('/narudzbenice', {
-      method: 'POST',
+  static createOrder(order: {
+    tip: "NABAVKA" | "PRODAJA";
+    dobavljac_id?: number | null;
+    napomena?: string | null;
+    stavke: { proizvod_id: number; kolicina: number }[];
+  }) {
+    return this.request<any>("/narudzbenice", {
+      method: "POST",
       body: JSON.stringify(order),
     });
   }
 
-  static async updateOrderStatus(id: number, status: string) {
-    return this.request(`/narudzbenice/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify({ status }),
+  static updateOrder(id: number, payload: {
+    status?: string;
+    dostavljac_id?: number | null;
+    napomena?: string | null;
+  }) {
+    return this.request<any>(`/narudzbenice/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
     });
   }
 
-  static async deleteOrder(id: number) {
-    return this.request(`/narudzbenice/${id}`, {
-      method: 'DELETE',
+  static deleteOrder(id: number) {
+    return this.request<{ message?: string }>(`/narudzbenice/${id}`, {
+      method: "DELETE",
     });
   }
 
-  // Dashboard
-  static async getDashboard() {
-    return this.request('/dashboard');
+  // KORISNICI (samo vlasnik)
+  static getUsers() {
+    return this.request<any[]>("/korisnici", { method: "GET" });
   }
+
+  static updateUserRole(id: number, uloga: "VLASNIK" | "RADNIK" | "DOSTAVLJAC") {
+    return this.request<any>(`/korisnici/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ uloga }),
+    });
+  }
+
 }
