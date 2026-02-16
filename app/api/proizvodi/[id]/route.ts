@@ -20,7 +20,9 @@ export async function GET(
     }
 
     const result = await query(
-      `SELECT id_proizvod, naziv, sifra, cena, kolicina_na_lageru, jedinica_mere
+      `SELECT id_proizvod, naziv, sifra, nabavna_cena, prodajna_cena,
+       kolicina_na_lageru, minimalna_kolicina, jedinica_mere,
+       datum_kreiranja, datum_izmene
        FROM proizvod
        WHERE id_proizvod = $1`,
       [productId]
@@ -52,12 +54,24 @@ export async function PUT(
     const { id } = await params;
     const productId = Number(id);
 
-    const { naziv, sifra, cena, kolicina_na_lageru, jedinica_mere } = await req.json();
+    const { naziv, sifra, prodajna_cena, kolicina_na_lageru, minimalna_kolicina, jedinica_mere } = await req.json();
 
-    // Poziv SQL funkcije iz migracije 02_funkcije_izmena.sql
+    // VAŽNO: nabavna_cena se NE SME menjati nakon kreiranja!
+    // Ažuriramo samo ostala polja
     const result = await query(
-      `SELECT * FROM izmeni_proizvod($1, $2, $3, $4, $5, $6)`,
-      [productId, naziv, sifra, cena, kolicina_na_lageru, jedinica_mere]
+      `UPDATE proizvod
+       SET
+         naziv = COALESCE($2, naziv),
+         sifra = COALESCE($3, sifra),
+         prodajna_cena = COALESCE($4, prodajna_cena),
+         kolicina_na_lageru = COALESCE($5, kolicina_na_lageru),
+         minimalna_kolicina = COALESCE($6, minimalna_kolicina),
+         jedinica_mere = COALESCE($7, jedinica_mere)
+       WHERE id_proizvod = $1
+       RETURNING id_proizvod, naziv, sifra, nabavna_cena, prodajna_cena,
+                 kolicina_na_lageru, minimalna_kolicina, jedinica_mere,
+                 datum_kreiranja, datum_izmene`,
+      [productId, naziv, sifra, prodajna_cena, kolicina_na_lageru, minimalna_kolicina, jedinica_mere]
     );
 
     if (result.rows.length === 0) {

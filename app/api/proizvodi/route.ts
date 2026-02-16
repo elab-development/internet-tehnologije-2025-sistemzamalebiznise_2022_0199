@@ -20,7 +20,9 @@ export async function GET(req: NextRequest) {
 
     const result = await query(`
       SELECT
-        id_proizvod, naziv, sifra, cena, kolicina_na_lageru, jedinica_mere
+        id_proizvod, naziv, sifra, nabavna_cena, prodajna_cena,
+        kolicina_na_lageru, minimalna_kolicina, jedinica_mere,
+        datum_kreiranja, datum_izmene
       FROM proizvod
       ORDER BY id_proizvod DESC
     `);
@@ -41,20 +43,20 @@ export async function POST(req: NextRequest) {
       return addCorsHeaders(req, NextResponse.json({ error: "Samo vlasnik može da dodaje proizvode" }, { status: 403 }));
     }
 
-    const { naziv, sifra, cena, kolicina_na_lageru, jedinica_mere } = await req.json();
+    const { naziv, sifra, nabavna_cena, prodajna_cena, kolicina_na_lageru, minimalna_kolicina, jedinica_mere } = await req.json();
 
-    if (!naziv || !sifra || cena === undefined || !jedinica_mere) {
+    if (!naziv || !sifra || nabavna_cena === undefined || prodajna_cena === undefined || !jedinica_mere) {
       return addCorsHeaders(req, NextResponse.json(
-        { error: "Obavezno: naziv, sifra, cena, jedinica_mere" },
+        { error: "Obavezno: naziv, sifra, nabavna_cena, prodajna_cena, jedinica_mere" },
         { status: 400 }
       ));
     }
 
     const result = await query(
-      `INSERT INTO proizvod (naziv, sifra, cena, kolicina_na_lageru, jedinica_mere)
-       VALUES ($1, $2, $3, $4, $5)
-       RETURNING id_proizvod, naziv, sifra, cena, kolicina_na_lageru, jedinica_mere`,
-      [naziv, sifra, cena, kolicina_na_lageru ?? 0, jedinica_mere]
+      `INSERT INTO proizvod (naziv, sifra, nabavna_cena, prodajna_cena, kolicina_na_lageru, minimalna_kolicina, jedinica_mere)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       RETURNING id_proizvod, naziv, sifra, nabavna_cena, prodajna_cena, kolicina_na_lageru, minimalna_kolicina, jedinica_mere, datum_kreiranja`,
+      [naziv, sifra, nabavna_cena, prodajna_cena, kolicina_na_lageru ?? 0, minimalna_kolicina ?? null, jedinica_mere]
     );
 
     return addCorsHeaders(req, NextResponse.json(result.rows[0], { status: 201 }));

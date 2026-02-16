@@ -6,7 +6,7 @@ export function OPTIONS(req: NextRequest) {
   return handleOptions(req);
 }
 
-const VALID_STATUS = ['KREIRANA', 'POSLATA', 'U_TRANSPORTU', 'ISPORUCENA', 'ZAVRSENA', 'OTKAZANA'] as const;
+const VALID_STATUS = ['KREIRANA', 'POSLATA', 'U_TRANSPORTU', 'PRIMLJENA', 'ZAVRSENA', 'OTKAZANA', 'STORNIRANA'] as const;
 
 export async function GET(
   req: NextRequest,
@@ -30,8 +30,10 @@ export async function GET(
 
     const headerRes = await query(
       `SELECT
-        n.id_narudzbenica, n.datum_kreiranja, n.tip, n.status, n.napomena,
-        n.ukupna_vrednost, n.pdf_putanja, n.kreirao_id, n.dobavljac_id, n.dostavljac_id,
+        n.id_narudzbenica, n.datum_kreiranja, n.datum_izmene, n.datum_zavrsetka,
+        n.tip, n.status, n.napomena, n.ukupna_vrednost, n.pdf_putanja,
+        n.kreirao_id, n.dobavljac_id, n.dostavljac_id,
+        n.stornirana, n.datum_storniranja, n.razlog_storniranja, n.stornirao_id,
         d.naziv_firme as dobavljac_naziv,
         k.email as kreirao_email
       FROM narudzbenica n
@@ -52,8 +54,8 @@ export async function GET(
 
     const itemsRes = await query(
       `SELECT
-        sn.id_stavka, sn.proizvod_id, sn.kolicina, sn.ukupna_cena,
-        p.naziv as proizvod_naziv, p.sifra as proizvod_sifra, p.cena as proizvod_cena
+        sn.id_stavka, sn.proizvod_id, sn.kolicina, sn.ukupna_cena, sn.prodajna_cena, sn.datum_kreiranja,
+        p.naziv as proizvod_naziv, p.sifra as proizvod_sifra, p.prodajna_cena as proizvod_cena
       FROM stavka_narudzbenice sn
       JOIN proizvod p ON sn.proizvod_id = p.id_proizvod
       WHERE sn.narudzbenica_id = $1`,

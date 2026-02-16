@@ -6,6 +6,8 @@ const ALLOWED_ORIGINS = [
   "http://localhost:8080",
   "http://172.20.10.4:8080",
   "http://172.20.10.4:3000",
+  "http://172.17.240.1:3000",
+  "http://172.17.240.1:8080",
   "https://shop-scale-buddy.lovable.app",
 ];
 

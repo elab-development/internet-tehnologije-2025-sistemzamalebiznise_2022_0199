@@ -12,9 +12,14 @@ export interface Proizvod {
   id_proizvod: number;
   naziv: string;
   sifra: string;
-  cena: number;
+  cena: number; // deprecated, koristi prodajna_cena
+  nabavna_cena: number;
+  prodajna_cena: number;
   kolicina_na_lageru: number;
+  minimalna_kolicina?: number;
   jedinica_mere: string;
+  datum_kreiranja?: string;
+  datum_izmene?: string;
 }
 
 export interface Dobavljac {
@@ -29,21 +34,32 @@ export type StatusNarudzbenice =
   | 'KREIRANA'
   | 'POSLATA'
   | 'U_TRANSPORTU'
-  | 'ISPORUCENA'
+  | 'PRIMLJENA'
   | 'ZAVRSENA'
-  | 'OTKAZANA';
+  | 'OTKAZANA'
+  | 'STORNIRANA';
 
 export type TipNarudzbenice = 'NABAVKA' | 'PRODAJA';
 
 export interface Narudzbenica {
   id_narudzbenica: number;
   datum: string;
+  datum_kreiranja?: string;
+  datum_izmene?: string;
+  datum_zavrsetka?: string;
   tip: TipNarudzbenice;
   status: StatusNarudzbenice;
   ukupna_vrednost: number;
+  kreirao_id: number;
   dobavljac_naziv?: string;
   dostavljac_id?: number;
   napomena?: string;
+  stornirana: boolean;
+  datum_storniranja?: string;
+  razlog_storniranja?: string;
+  stodajna_cena?: number; // snapshot za PRODAJU
+  datum_kreiranja?: string;
+  prornirao_id?: number;
 }
 
 export interface StavkaNarudzbenice {
@@ -70,9 +86,10 @@ export interface Korisnik {
 
 export const STATUS_LABELS: Record<StatusNarudzbenice, string> = {
   KREIRANA: 'Kreirana',
-  POSLATA: 'Poslata',
-  U_TRANSPORTU: 'U transportu',
-  ISPORUCENA: 'Isporučena',
+  PRIMLJENA: 'Primljena',
+  ZAVRSENA: 'Završena',
+  OTKAZANA: 'Otkazana',
+  STORNIRANA: 'Storniroručena',
   ZAVRSENA: 'Završena',
   OTKAZANA: 'Otkazana',
 };
@@ -81,12 +98,13 @@ export const ULOGA_LABELS: Record<Uloga, string> = {
   VLASNIK: 'Vlasnik',
   RADNIK: 'Radnik',
   DOSTAVLJAC: 'Dostavljač',
-};
-
-export const VALID_TRANSITIONS: Record<StatusNarudzbenice, StatusNarudzbenice[]> = {
-  KREIRANA: ['POSLATA', 'OTKAZANA'],
+};ZAVRSENA', 'STORNIRANA', 'OTKAZANA'], // PRODAJA može direktno u ZAVRSENA
   POSLATA: ['U_TRANSPORTU', 'OTKAZANA'],
-  U_TRANSPORTU: ['ISPORUCENA'],
+  U_TRANSPORTU: ['PRIMLJENA', 'OTKAZANA'],
+  PRIMLJENA: [], // završni status za NABAVKU
+  ZAVRSENA: [], // završni status za PRODAJU
+  OTKAZANA: [],
+  STORNIRNSPORTU: ['ISPORUCENA'],
   ISPORUCENA: ['ZAVRSENA'],
   ZAVRSENA: [],
   OTKAZANA: [],
