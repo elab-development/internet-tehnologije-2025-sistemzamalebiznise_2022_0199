@@ -120,7 +120,7 @@ jobs:
 
       - name: Provera zdravlja backend-a
         run: |
-          curl --fail --retry 5 --retry-delay 3 http://localhost:3000/api/auth/me || exit 1
+          curl --fail --retry 5 --retry-delay 3 http://localhost:3000/api/swagger || exit 1
 
       - name: Provera zdravlja frontend-a
         run: |
