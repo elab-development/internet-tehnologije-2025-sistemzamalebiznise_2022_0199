@@ -20,7 +20,8 @@ export async function GET(req: NextRequest) {
 
     const result = await query(`
       SELECT
-        id_proizvod, naziv, sifra, nabavna_cena, prodajna_cena,
+        id_proizvod, naziv, sifra, 
+        cena, nabavna_cena, prodajna_cena,
         kolicina_na_lageru, minimalna_kolicina, jedinica_mere,
         datum_kreiranja, datum_izmene
       FROM proizvod
@@ -53,10 +54,10 @@ export async function POST(req: NextRequest) {
     }
 
     const result = await query(
-      `INSERT INTO proizvod (naziv, sifra, nabavna_cena, prodajna_cena, kolicina_na_lageru, minimalna_kolicina, jedinica_mere)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
-       RETURNING id_proizvod, naziv, sifra, nabavna_cena, prodajna_cena, kolicina_na_lageru, minimalna_kolicina, jedinica_mere, datum_kreiranja`,
-      [naziv, sifra, nabavna_cena, prodajna_cena, kolicina_na_lageru ?? 0, minimalna_kolicina ?? null, jedinica_mere]
+      `INSERT INTO proizvod (naziv, sifra, cena, nabavna_cena, prodajna_cena, kolicina_na_lageru, minimalna_kolicina, jedinica_mere)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       RETURNING id_proizvod, naziv, sifra, cena, nabavna_cena, prodajna_cena, kolicina_na_lageru, minimalna_kolicina, jedinica_mere, datum_kreiranja`,
+      [naziv, sifra, prodajna_cena, nabavna_cena, prodajna_cena, kolicina_na_lageru ?? 0, minimalna_kolicina ?? null, jedinica_mere]
     );
 
     return addCorsHeaders(req, NextResponse.json(result.rows[0], { status: 201 }));

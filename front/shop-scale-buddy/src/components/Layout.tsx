@@ -10,6 +10,7 @@ import {
   LogOut,
   Menu,
   Settings,
+  TrendingUp,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -70,7 +71,10 @@ export default function Layout() {
 
   const allNavItems =
     user?.uloga === 'VLASNIK'
-      ? [...navItems, { to: '/korisnici', label: 'Korisnici', icon: Users }]
+      ? [...navItems, 
+          { to: '/analitika', label: 'Analitika', icon: TrendingUp },
+          { to: '/korisnici', label: 'Korisnici', icon: Users }
+        ]
       : navItems;
 
   const isActive = (path: string) => location.pathname.startsWith(path);

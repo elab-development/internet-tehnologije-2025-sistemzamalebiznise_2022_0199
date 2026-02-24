@@ -5,7 +5,7 @@ import type { Proizvod } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -37,7 +37,8 @@ import { Plus, Pencil, Trash2, Search, Loader2, Package } from 'lucide-react';
 const emptyForm = {
   naziv: '',
   sifra: '',
-  cena: '',
+  nabavna_cena: '',
+  prodajna_cena: '',
   kolicina_na_lageru: '',
   jedinica_mere: '',
 };
@@ -113,7 +114,8 @@ export default function Proizvodi() {
     setForm({
       naziv: p.naziv,
       sifra: p.sifra,
-      cena: String(p.cena),
+      nabavna_cena: String(p.nabavna_cena),
+      prodajna_cena: String(p.prodajna_cena),
       kolicina_na_lageru: String(p.kolicina_na_lageru),
       jedinica_mere: p.jedinica_mere,
     });
@@ -121,7 +123,7 @@ export default function Proizvodi() {
   };
 
   const handleSave = async () => {
-    if (!form.naziv.trim() || !form.sifra.trim() || !form.cena || !form.jedinica_mere.trim()) {
+    if (!form.naziv.trim() || !form.sifra.trim() || !form.nabavna_cena || !form.prodajna_cena || !form.jedinica_mere.trim()) {
       toast({
         title: 'Greška',
         description: 'Popunite sva obavezna polja.',
@@ -133,7 +135,8 @@ export default function Proizvodi() {
     const body = {
       naziv: form.naziv.trim(),
       sifra: form.sifra.trim(),
-      cena: Number(form.cena),
+      nabavna_cena: Number(form.nabavna_cena),
+      prodajna_cena: Number(form.prodajna_cena),
       kolicina_na_lageru: Number(form.kolicina_na_lageru) || 0,
       jedinica_mere: form.jedinica_mere.trim(),
     };
@@ -230,7 +233,8 @@ export default function Proizvodi() {
                     >
                       Šifra {sortBy === 'sifra' && (sortDir === 'asc' ? '↑' : '↓')}
                     </TableHead>
-                    <TableHead className="text-right">Cena</TableHead>
+                    <TableHead className="text-right">Nabavna cena</TableHead>
+                    <TableHead className="text-right">Prodajna cena</TableHead>
                     <TableHead className="text-right">Na lageru</TableHead>
                     <TableHead>Jed. mere</TableHead>
                     {isVlasnik && <TableHead className="text-right">Akcije</TableHead>}
@@ -242,7 +246,12 @@ export default function Proizvodi() {
                       <TableCell className="font-medium">{p.naziv}</TableCell>
                       <TableCell>{p.sifra}</TableCell>
                       <TableCell className="text-right">
-                        {p.cena.toLocaleString('sr-RS', {
+                        {p.nabavna_cena.toLocaleString('sr-RS', {
+                          minimumFractionDigits: 2,
+                        })}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {p.prodajna_cena.toLocaleString('sr-RS', {
                           minimumFractionDigits: 2,
                         })}
                       </TableCell>
@@ -302,15 +311,27 @@ export default function Proizvodi() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label>Cena *</Label>
+                <Label>Nabavna cena *</Label>
                 <Input
                   type="number"
                   min="0"
                   step="0.01"
-                  value={form.cena}
-                  onChange={(e) => setForm({ ...form, cena: e.target.value })}
+                  value={form.nabavna_cena}
+                  onChange={(e) => setForm({ ...form, nabavna_cena: e.target.value })}
                 />
               </div>
+              <div className="space-y-2">
+                <Label>Prodajna cena *</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={form.prodajna_cena}
+                  onChange={(e) => setForm({ ...form, prodajna_cena: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label>Količina na lageru</Label>
                 <Input

@@ -12,7 +12,6 @@ export interface Proizvod {
   id_proizvod: number;
   naziv: string;
   sifra: string;
-  cena: number; // deprecated, koristi prodajna_cena
   nabavna_cena: number;
   prodajna_cena: number;
   kolicina_na_lageru: number;
@@ -57,9 +56,8 @@ export interface Narudzbenica {
   stornirana: boolean;
   datum_storniranja?: string;
   razlog_storniranja?: string;
-  stodajna_cena?: number; // snapshot za PRODAJU
-  datum_kreiranja?: string;
-  prornirao_id?: number;
+  prodajna_cena?: number; // snapshot za PRODAJU
+  stornirao_id?: number;
 }
 
 export interface StavkaNarudzbenice {
@@ -86,26 +84,57 @@ export interface Korisnik {
 
 export const STATUS_LABELS: Record<StatusNarudzbenice, string> = {
   KREIRANA: 'Kreirana',
+  POSLATA: 'Poslata',
+  U_TRANSPORTU: 'U transportu',
   PRIMLJENA: 'Primljena',
   ZAVRSENA: 'Završena',
   OTKAZANA: 'Otkazana',
-  STORNIRANA: 'Storniroručena',
-  ZAVRSENA: 'Završena',
-  OTKAZANA: 'Otkazana',
+  STORNIRANA: 'Stornirana',
 };
 
 export const ULOGA_LABELS: Record<Uloga, string> = {
   VLASNIK: 'Vlasnik',
   RADNIK: 'Radnik',
   DOSTAVLJAC: 'Dostavljač',
-};ZAVRSENA', 'STORNIRANA', 'OTKAZANA'], // PRODAJA može direktno u ZAVRSENA
-  POSLATA: ['U_TRANSPORTU', 'OTKAZANA'],
-  U_TRANSPORTU: ['PRIMLJENA', 'OTKAZANA'],
-  PRIMLJENA: [], // završni status za NABAVKU
-  ZAVRSENA: [], // završni status za PRODAJU
-  OTKAZANA: [],
-  STORNIRNSPORTU: ['ISPORUCENA'],
-  ISPORUCENA: ['ZAVRSENA'],
+};
+
+// Dozvoljeni prelazi statusa za NABAVKU (kupovina od dobavljača)
+export const NABAVKA_TRANSITIONS: Record<StatusNarudzbenice, StatusNarudzbenice[]> = {
+  KREIRANA: ['U_TRANSPORTU', 'OTKAZANA'],
+  POSLATA: [],
+  U_TRANSPORTU: ['ZAVRSENA'],
+  PRIMLJENA: [],
   ZAVRSENA: [],
   OTKAZANA: [],
+  STORNIRANA: [],
 };
+
+// Dozvoljeni prelazi statusa za PRODAJU (prodaja kupcu)
+export const PRODAJA_TRANSITIONS: Record<StatusNarudzbenice, StatusNarudzbenice[]> = {
+  KREIRANA: ['STORNIRANA', 'ZAVRSENA'],
+  POSLATA: [],
+  U_TRANSPORTU: [],
+  PRIMLJENA: [],
+  ZAVRSENA: [],
+  OTKAZANA: [],
+  STORNIRANA: [],
+};
+
+// Generička mapa (fallback) - unija svih prelaza
+export const ALLOWED_STATUS_TRANSITIONS: Record<StatusNarudzbenice, StatusNarudzbenice[]> = {
+  KREIRANA: ['POSLATA', 'ZAVRSENA', 'STORNIRANA', 'OTKAZANA'],
+  POSLATA: ['U_TRANSPORTU', 'OTKAZANA'],
+  U_TRANSPORTU: ['ZAVRSENA'],
+  PRIMLJENA: [],
+  ZAVRSENA: [],
+  OTKAZANA: [],
+  STORNIRANA: [],
+};
+
+// Helper: dobij tranzicije na osnovu tipa narudžbenice
+export function getTransitionsForType(tip: TipNarudzbenice): Record<StatusNarudzbenice, StatusNarudzbenice[]> {
+  return tip === 'NABAVKA' ? NABAVKA_TRANSITIONS : PRODAJA_TRANSITIONS;
+}
+
+// Alias za kompatibilnost
+export const VALID_TRANSITIONS = ALLOWED_STATUS_TRANSITIONS;

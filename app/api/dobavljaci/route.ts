@@ -8,6 +8,9 @@ export function OPTIONS(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   try {
+    const auth = await requireAuth(req);
+    if (!auth) return addCorsHeaders(req, NextResponse.json({ error: "Nemate pristup" }, { status: 401 }));
+
     const result = await query(`
       SELECT id_dobavljac, naziv_firme, telefon, email, adresa
       FROM dobavljac

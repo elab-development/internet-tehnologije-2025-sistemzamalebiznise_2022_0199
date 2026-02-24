@@ -20,7 +20,7 @@ export async function GET(
     }
 
     const result = await query(
-      `SELECT id_proizvod, naziv, sifra, nabavna_cena, prodajna_cena,
+      `SELECT id_proizvod, naziv, sifra, cena, nabavna_cena, prodajna_cena,
        kolicina_na_lageru, minimalna_kolicina, jedinica_mere,
        datum_kreiranja, datum_izmene
        FROM proizvod
@@ -63,12 +63,13 @@ export async function PUT(
        SET
          naziv = COALESCE($2, naziv),
          sifra = COALESCE($3, sifra),
+         cena = COALESCE($4, cena),
          prodajna_cena = COALESCE($4, prodajna_cena),
          kolicina_na_lageru = COALESCE($5, kolicina_na_lageru),
          minimalna_kolicina = COALESCE($6, minimalna_kolicina),
          jedinica_mere = COALESCE($7, jedinica_mere)
        WHERE id_proizvod = $1
-       RETURNING id_proizvod, naziv, sifra, nabavna_cena, prodajna_cena,
+       RETURNING id_proizvod, naziv, sifra, cena, nabavna_cena, prodajna_cena,
                  kolicina_na_lageru, minimalna_kolicina, jedinica_mere,
                  datum_kreiranja, datum_izmene`,
       [productId, naziv, sifra, prodajna_cena, kolicina_na_lageru, minimalna_kolicina, jedinica_mere]
@@ -109,7 +110,7 @@ export async function DELETE(
       [productId]
     );
 
-    if (result.rows.length === 0) {
+    if (result.rows.length === 0 || result.rows[0].id_proizvod === null) {
       return addCorsHeaders(req, NextResponse.json({ error: "Proizvod nije pronađen" }, { status: 404 }));
     }
 

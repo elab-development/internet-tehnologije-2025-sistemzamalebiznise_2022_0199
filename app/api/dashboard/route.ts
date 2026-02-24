@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
   try {
     const auth = await requireAuth(req);
     if (!auth) {
-      if (!auth) return addCorsHeaders(req, NextResponse.json({ error: "Nemate pristup" }, { status: 401 }));
+      return addCorsHeaders(req, NextResponse.json({ error: "Nemate pristup" }, { status: 401 }));
     }
 
     // 1) Osnovne brojke
@@ -67,9 +67,10 @@ export async function GET(req: NextRequest) {
       KREIRANA: 0,
       POSLATA: 0,
       U_TRANSPORTU: 0,
-      ISPORUCENA: 0,
+      PRIMLJENA: 0,
       ZAVRSENA: 0,
       OTKAZANA: 0,
+      STORNIRANA: 0,
     };
     for (const r of narudzbeniceStatusRes.rows) {
       narudzbenicePoStatusu[r.status] = Number(r.cnt);

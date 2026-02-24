@@ -18,9 +18,6 @@ export async function GET(
 
     const uloga = (auth as any).uloga;
     const userId = (auth as any).userId;
-    //proveriti
-    const authUser = await requireAuth(req);
-    if (!authUser) return addCorsHeaders(req, NextResponse.json({ error: "Niste prijavljeni" }, { status: 401 }));
 
     const { id } = await params;
     const orderId = Number(id);

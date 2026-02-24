@@ -6,9 +6,13 @@ ALTER TABLE proizvod
   ADD COLUMN datum_kreiranja TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   ADD COLUMN datum_izmene TIMESTAMP;
 
--- Migracija postojećeg polja cena u prodajnu_cena
+-- Migracija postojećeg polja cena u prodajnu_cenu
 UPDATE proizvod SET prodajna_cena = cena WHERE prodajna_cena = 0;
 UPDATE proizvod SET nabavna_cena = cena WHERE nabavna_cena = 0;
+
+-- Uklanjanje NOT NULL constraint sa stare kolone cena (deprecated)
+ALTER TABLE proizvod ALTER COLUMN cena DROP NOT NULL;
+ALTER TABLE proizvod ALTER COLUMN cena SET DEFAULT 0;
 
 -- Dodavanje statusa PRIMLJENA i STORNIRANA
 ALTER TYPE status_narudzbenice ADD VALUE IF NOT EXISTS 'PRIMLJENA';
@@ -91,8 +95,8 @@ BEGIN
     RAISE EXCEPTION 'Storniranje je dozvoljeno samo za narudžbenice sa statusom KREIRANA';
   END IF;
 
-  -- NABAVKA: Status PRIMLJENA -> povećaj lager
-  IF v_tip = 'NABAVKA' AND p_novi_status = 'PRIMLJENA' THEN
+  -- NABAVKA: Status PRIMLJENA ili ZAVRSENA -> povećaj lager
+  IF v_tip = 'NABAVKA' AND (p_novi_status = 'PRIMLJENA' OR p_novi_status = 'ZAVRSENA') THEN
     FOR v_stavka IN 
       SELECT sn.proizvod_id, sn.kolicina
       FROM stavka_narudzbenice sn
@@ -212,7 +216,7 @@ RETURNS TABLE (
   datum_kreiranja TIMESTAMP,
   tip tip_narudzbenice,
   status status_narudzbenice,
-  ukupna_vrednost NUMERIC
+  ukupna_vrednost DOUBLE PRECISION
 ) AS $$
 DECLARE
   v_id_narudzbenica INT;
@@ -275,3 +279,24 @@ BEGIN
   WHERE n.id_narudzbenica = v_id_narudzbenica;
 END;
 $$ LANGUAGE plpgsql;
+
+-- ============================================================================
+-- ISPRAVKE I ENHANCEMENTS
+-- ============================================================================
+
+-- Popravljanje stare kolone cena (iz 05_fix_cena_column.sql)
+-- Setovanje cena na prodajnu cenu za sve postojeće proizvode gde je cena NULL
+UPDATE proizvod 
+SET cena = prodajna_cena 
+WHERE cena IS NULL;
+
+-- Modifikacija foreign key constraint-a za CASCADE delete na proizvod
+-- Ovo omogućava brisanje proizvoda čak i ako ima stavke narudžbenice
+ALTER TABLE stavka_narudzbenice 
+  DROP CONSTRAINT IF EXISTS stavka_narudzbenice_proizvod_id_fkey;
+
+ALTER TABLE stavka_narudzbenice 
+  ADD CONSTRAINT stavka_narudzbenice_proizvod_id_fkey 
+  FOREIGN KEY (proizvod_id) 
+  REFERENCES proizvod(id_proizvod) 
+  ON DELETE CASCADE;

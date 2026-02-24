@@ -2,21 +2,41 @@ import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { requireAuth } from '@/lib/auth';
 import { addCorsHeaders, handleOptions } from "@/lib/cors";
+import { posaljiObavestenjeVlasniku } from '@/lib/slanjeMejla';
 
 export function OPTIONS(req: NextRequest) {
   return handleOptions(req);
 }
 
-const VALID_STATUS = ['KREIRANA', 'POSLATA', 'U_TRANSPORTU', 'PRIMLJENA', 'ZAVRSENA', 'OTKAZANA', 'STORNIRANA'] as const;
+const VALID_STATUS = ['KREIRANA', 'U_TRANSPORTU', 'ZAVRSENA', 'OTKAZANA', 'STORNIRANA'] as const;
 
 const DOZVOLJENE_ULOGE_ZAVRSAVANJE = ["VLASNIK", "RADNIK"];
 const DOZVOLJENE_ULOGE_STORNIRANJE = ["VLASNIK", "RADNIK"];
+
+// Dozvoljeni prelazi statusa za NABAVKU
+const NABAVKA_TRANSITIONS: Record<string, string[]> = {
+  KREIRANA: ['U_TRANSPORTU', 'OTKAZANA'],
+  U_TRANSPORTU: ['ZAVRSENA'],
+  ZAVRSENA: [],
+  OTKAZANA: [],
+  STORNIRANA: [],
+};
+
+// Dozvoljeni prelazi statusa za PRODAJU
+const PRODAJA_TRANSITIONS: Record<string, string[]> = {
+  KREIRANA: ['STORNIRANA', 'ZAVRSENA'],
+  POSLATA: [],
+  U_TRANSPORTU: [],
+  ZAVRSENA: [],
+  OTKAZANA: [],
+  STORNIRANA: [],
+};
 
 /**
  * PATCH /api/narudzbenice/[id]/status
  * 
  * Menja status narudžbenice i automatski upravlja lagerom prema poslovnim pravilima:
- * - NABAVKA: status PRIMLJENA povećava lager
+ * - NABAVKA: status ZAVRSENA povećava lager
  * - PRODAJA: status ZAVRSENA smanjuje lager (sa proverom dostupnosti)
  * - STORNIRANJE: dozvoljeno samo ako je status KREIRANA
  */
@@ -69,7 +89,7 @@ export async function PATCH(
 
     const { tip, status: stariStatus } = checkRes.rows[0];
 
-    // RBAC: Samo VLASNIK i RADNIK mogu završavati narudžbenice
+    // RBAC: Samo VLASNIK i RADNIK mogu završavati/primati narudžbenice
     if ((noviStatus === 'ZAVRSENA' || noviStatus === 'PRIMLJENA') && !DOZVOLJENE_ULOGE_ZAVRSAVANJE.includes(uloga)) {
       return addCorsHeaders(req, NextResponse.json({ error: "Nemate pristup" }, { status: 403 }));
     }
@@ -87,10 +107,20 @@ export async function PATCH(
       ));
     }
 
-    // Provera da li je prelaz statusa validan
+    // Provera da li je prelaz statusa validan za dati tip narudžbenice
+    const transitions = tip === 'NABAVKA' ? NABAVKA_TRANSITIONS : PRODAJA_TRANSITIONS;
+    const dozvoljeniPrelazi = transitions[stariStatus] || [];
+
     if (stariStatus === noviStatus) {
       return addCorsHeaders(req, NextResponse.json(
         { error: "Narudžbenica je već u tom statusu" },
+        { status: 400 }
+      ));
+    }
+
+    if (!dozvoljeniPrelazi.includes(noviStatus)) {
+      return addCorsHeaders(req, NextResponse.json(
+        { error: `Prelaz iz ${stariStatus} u ${noviStatus} nije dozvoljen za tip ${tip}. Dozvoljeni: ${dozvoljeniPrelazi.join(', ') || 'nema'}` },
         { status: 400 }
       ));
     }
@@ -108,12 +138,52 @@ export async function PATCH(
 
       const updatedOrder = result.rows[0];
 
+      let notification: { sent: boolean; message: string } | undefined;
+      if (tip === 'PRODAJA' && noviStatus === 'ZAVRSENA') {
+        try {
+          const lowStockItemsResult = await query(
+            `
+              SELECT DISTINCT p.naziv, p.kolicina_na_lageru
+              FROM stavka_narudzbenice sn
+              JOIN proizvod p ON p.id_proizvod = sn.proizvod_id
+              WHERE sn.narudzbenica_id = $1
+                AND p.kolicina_na_lageru <= 5
+              ORDER BY p.naziv ASC
+            `,
+            [orderId]
+          );
+
+          const lowStockItems = lowStockItemsResult.rows || [];
+
+          for (const item of lowStockItems) {
+            await posaljiObavestenjeVlasniku(
+              String(item.naziv),
+              Number(item.kolicina_na_lageru)
+            );
+          }
+
+          notification = {
+            sent: true,
+            message:
+              lowStockItems.length > 0
+                ? `Poslato ${lowStockItems.length} obaveštenja vlasniku za proizvode sa lagerom <= 5.`
+                : 'Nema proizvoda iz ove prodaje sa lagerom <= 5.',
+          };
+        } catch (mailError: any) {
+          notification = {
+            sent: false,
+            message: `Status je promenjen, ali slanje mejla nije uspelo: ${mailError.message}`,
+          };
+        }
+      }
+
       return addCorsHeaders(req, NextResponse.json({
         message: "Status uspešno promenjen",
         id_narudzbenica: updatedOrder.id_narudzbenica,
         status: updatedOrder.status,
         datum_zavrsetka: updatedOrder.datum_zavrsetka,
-        stornirana: updatedOrder.stornirana
+        stornirana: updatedOrder.stornirana,
+        notification
       }));
 
     } catch (dbError: any) {

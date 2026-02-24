@@ -125,12 +125,44 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Validacija dostupnosti na lageru - samo za PRODAJA
+    if (tip === 'PRODAJA') {
+      for (const s of stavke) {
+        const proizvodId = Number(s.proizvod_id);
+        const trazenaKolicina = Number(s.kolicina);
+
+        const checkResult = await query(
+          `SELECT naziv, kolicina_na_lageru FROM proizvod WHERE id_proizvod = $1`,
+          [proizvodId]
+        );
+
+        if (checkResult.rows.length === 0) {
+          return addCorsHeaders(req, NextResponse.json(
+            { error: `Proizvod sa ID ${proizvodId} ne postoji` },
+            { status: 400 }
+          ));
+        }
+
+        const proizvod = checkResult.rows[0];
+        const dostupnaKolicina = Number(proizvod.kolicina_na_lageru);
+
+        if (trazenaKolicina > dostupnaKolicina) {
+          return addCorsHeaders(req, NextResponse.json(
+            { 
+              error: `Nema dovoljan broj proizvoda "${proizvod.naziv}". Na lageru je ${dostupnaKolicina}, tražite ${trazenaKolicina}.`
+            },
+            { status: 400 }
+          ));
+        }
+      }
+    }
+
     // Koristi funkciju iz baze koja automatski:
     // - Kod PRODAJE postavlja prodajnu_cena snapshot u stavci
     // - Računa ukupnu vrednost
     // - Postavlja datumKreiranja
     const result = await query(
-      `SELECT * FROM kreiraj_narudzbenicu($1, $2, $3, $4, $5, $6)`,
+      `SELECT * FROM kreiraj_narudzbenicu($1, $2, $3, $4, $5, $6::jsonb)`,
       [
         tip,
         userId, // kreirao_id
