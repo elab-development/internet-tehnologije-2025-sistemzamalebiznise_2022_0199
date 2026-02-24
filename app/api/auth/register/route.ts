@@ -55,10 +55,10 @@ export async function POST(req: NextRequest) {
     ));
   } catch (error: any) {
     if (error?.code === "23505") {
-      return NextResponse.json(
+      return addCorsHeaders(req, NextResponse.json(
         { error: "Email je već u upotrebi" },
         { status: 409 }
-      );
+      ));
     }
     return addCorsHeaders(req, NextResponse.json({ error: error.message }, { status: 500 }));
   }

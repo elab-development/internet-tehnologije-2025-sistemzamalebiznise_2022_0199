@@ -28,9 +28,10 @@ const statusColors: Record<StatusNarudzbenice, string> = {
   KREIRANA: 'bg-muted text-muted-foreground',
   POSLATA: 'bg-info/15 text-info border-info/30',
   U_TRANSPORTU: 'bg-warning/15 text-warning border-warning/30',
-  ISPORUCENA: 'bg-success/15 text-success border-success/30',
+  PRIMLJENA: 'bg-emerald-100 text-emerald-700 border-emerald-300',
   ZAVRSENA: 'bg-primary/15 text-primary border-primary/30',
   OTKAZANA: 'bg-destructive/15 text-destructive border-destructive/30',
+  STORNIRANA: 'bg-red-100 text-red-700 border-red-300',
 };
 
 export default function Narudzbenice() {

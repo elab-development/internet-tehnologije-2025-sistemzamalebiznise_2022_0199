@@ -6,13 +6,15 @@ export function OPTIONS(req: NextRequest) {
   return handleOptions(req);
 }
 
-const VALID_STATUS = ['KREIRANA','POSLATA','U_TRANSPORTU','ISPORUCENA','ZAVRSENA','OTKAZANA'] as const;
+const VALID_STATUS = ['KREIRANA','POSLATA','U_TRANSPORTU','PRIMLJENA','ZAVRSENA','OTKAZANA','STORNIRANA'] as const;
 const VALID_TIP = ['NABAVKA','PRODAJA'] as const;
+
+const DOZVOLJENE_ULOGE_KREIRANJE = ["VLASNIK", "RADNIK"];
 
 export async function GET(req: NextRequest) {
   try {
     const auth = await requireAuth(req);
-    if (!auth) return addCorsHeaders(req, NextResponse.json({ error: "Nemate pristup" }, { status: 401 }));
+    if (!auth) return addCorsHeaders(req, NextResponse.json({ error: "Niste prijavljeni" }, { status: 401 }));
 
     const searchParams = req.nextUrl.searchParams;
     const status = searchParams.get("status");
@@ -28,6 +30,8 @@ export async function GET(req: NextRequest) {
       SELECT
         n.id_narudzbenica,
         n.datum_kreiranja,
+        n.datum_izmene,
+        n.datum_zavrsetka,
         n.tip,
         n.status,
         n.napomena,
@@ -36,6 +40,10 @@ export async function GET(req: NextRequest) {
         n.kreirao_id,
         n.dobavljac_id,
         n.dostavljac_id,
+        n.stornirana,
+        n.datum_storniranja,
+        n.razlog_storniranja,
+        n.stornirao_id,
         d.naziv_firme as dobavljac_naziv,
         k.email as kreirao_email
       FROM narudzbenica n
@@ -76,9 +84,19 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const auth = await requireAuth(req);
-    if (!auth) return addCorsHeaders(req, NextResponse.json({ error: "Nemate pristup" }, { status: 401 }));
+    if (!auth) {
+      return addCorsHeaders(req, NextResponse.json({ error: "Niste prijavljeni" }, { status: 401 }));
+    }
 
-    const { tip, dobavljac_id, napomena, stavke } = await req.json();
+    const uloga = (auth as any).uloga;
+    const userId = (auth as any).userId;
+
+    // RBAC: Samo VLASNIK i RADNIK mogu kreirati narudžbenice
+    if (!DOZVOLJENE_ULOGE_KREIRANJE.includes(uloga)) {
+      return addCorsHeaders(req, NextResponse.json({ error: "Nemate pristup" }, { status: 403 }));
+    }
+
+    const { tip, dobavljac_id, dostavljac_id, napomena, stavke } = await req.json();
 
     if (!tip || !VALID_TIP.includes(tip) || !Array.isArray(stavke) || stavke.length === 0) {
       return addCorsHeaders(req, NextResponse.json(
@@ -94,62 +112,84 @@ export async function POST(req: NextRequest) {
       return addCorsHeaders(req, NextResponse.json({ error: "Za PRODAJA dobavljac_id mora biti null" }, { status: 400 }));
     }
 
-    await query('BEGIN');
-    try {
-      // 1) napravi header
-      const headerRes = await query(
-        `INSERT INTO narudzbenica (tip, status, napomena, ukupna_vrednost, pdf_putanja, kreirao_id, dobavljac_id)
-         VALUES ($1, 'KREIRANA', $2, 0, NULL, $3, $4)
-         RETURNING id_narudzbenica, tip, status, kreirao_id, dobavljac_id, datum_kreiranja`,
-        [tip, napomena ?? null, (auth as any).userId, dobavljac_id ?? null]
-      );
+    // Validacija stavki
+    for (const s of stavke) {
+      const proizvodId = Number(s.proizvod_id);
+      const kolicina = Number(s.kolicina);
 
-      const orderId = headerRes.rows[0].id_narudzbenica;
+      if (!proizvodId || !kolicina || kolicina <= 0) {
+        return addCorsHeaders(req, NextResponse.json(
+          { error: "Svaka stavka mora imati proizvod_id i kolicina > 0" },
+          { status: 400 }
+        ));
+      }
+    }
 
-      // 2) ubaci stavke + izračunaj ukupno iz proizvod.cena
-      let ukupno = 0;
-
+    // Validacija dostupnosti na lageru - samo za PRODAJA
+    if (tip === 'PRODAJA') {
       for (const s of stavke) {
         const proizvodId = Number(s.proizvod_id);
-        const kolicina = Number(s.kolicina);
+        const trazenaKolicina = Number(s.kolicina);
 
-        if (!proizvodId || !kolicina || kolicina <= 0) {
-          throw new Error("Svaka stavka mora imati proizvod_id i kolicina > 0");
-        }
-
-        const pRes = await query(
-          `SELECT cena FROM proizvod WHERE id_proizvod = $1`,
+        const checkResult = await query(
+          `SELECT naziv, kolicina_na_lageru FROM proizvod WHERE id_proizvod = $1`,
           [proizvodId]
         );
-        if (pRes.rows.length === 0) throw new Error(`Proizvod ${proizvodId} ne postoji`);
 
-        const cena = Number(pRes.rows[0].cena);
-        const ukupnaCenaStavke = cena * kolicina;
-        ukupno += ukupnaCenaStavke;
+        if (checkResult.rows.length === 0) {
+          return addCorsHeaders(req, NextResponse.json(
+            { error: `Proizvod sa ID ${proizvodId} ne postoji` },
+            { status: 400 }
+          ));
+        }
 
-        await query(
-          `INSERT INTO stavka_narudzbenice (kolicina, ukupna_cena, proizvod_id, narudzbenica_id)
-           VALUES ($1, $2, $3, $4)`,
-          [kolicina, ukupnaCenaStavke, proizvodId, orderId]
-        );
+        const proizvod = checkResult.rows[0];
+        const dostupnaKolicina = Number(proizvod.kolicina_na_lageru);
+
+        if (trazenaKolicina > dostupnaKolicina) {
+          return addCorsHeaders(req, NextResponse.json(
+            { 
+              error: `Nema dovoljan broj proizvoda "${proizvod.naziv}". Na lageru je ${dostupnaKolicina}, tražite ${trazenaKolicina}.`
+            },
+            { status: 400 }
+          ));
+        }
       }
-
-      // 3) upiši ukupno u header
-      await query(
-        `UPDATE narudzbenica SET ukupna_vrednost = $1 WHERE id_narudzbenica = $2`,
-        [ukupno, orderId]
-      );
-
-      await query('COMMIT');
-
-      return addCorsHeaders(req, NextResponse.json(
-        { message: "NarudŻenica kreirana", id_narudzbenica: orderId, ukupna_vrednost: ukupno },
-        { status: 201 }
-      ));
-    } catch (e) {
-      await query('ROLLBACK');
-      throw e;
     }
+
+    // Koristi funkciju iz baze koja automatski:
+    // - Kod PRODAJE postavlja prodajnu_cena snapshot u stavci
+    // - Računa ukupnu vrednost
+    // - Postavlja datumKreiranja
+    const result = await query(
+      `SELECT * FROM kreiraj_narudzbenicu($1, $2, $3, $4, $5, $6::jsonb)`,
+      [
+        tip,
+        userId, // kreirao_id
+        dobavljac_id ?? null,
+        dostavljac_id ?? null,
+        napomena ?? null,
+        JSON.stringify(stavke)
+      ]
+    );
+
+    if (result.rows.length === 0) {
+      throw new Error("Greška pri kreiranju narudžbenice");
+    }
+
+    const createdOrder = result.rows[0];
+
+    return addCorsHeaders(req, NextResponse.json(
+      {
+        message: "Narudžbenica kreirana",
+        id_narudzbenica: createdOrder.id_narudzbenica,
+        tip: createdOrder.tip,
+        status: createdOrder.status,
+        ukupna_vrednost: parseFloat(createdOrder.ukupna_vrednost || 0),
+        datum_kreiranja: createdOrder.datum_kreiranja
+      },
+      { status: 201 }
+    ));
   } catch (error: any) {
     return addCorsHeaders(req, NextResponse.json({ error: error.message }, { status: 500 }));
   }

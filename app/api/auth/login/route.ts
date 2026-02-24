@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
+import * as jose from "jose";
 import { addCorsHeaders, handleOptions } from "@/lib/cors";
 export function OPTIONS(req: NextRequest) {
   return handleOptions(req);
@@ -52,12 +52,12 @@ export async function POST(req: NextRequest) {
     }
 
     const jwtSecret = process.env.JWT_SECRET || "kljuc_za_jwt_token";
+    const secret = new TextEncoder().encode(jwtSecret);
 
-    const token = jwt.sign(
-      { userId: user.id_korisnik, email: user.email, uloga: user.uloga },
-      jwtSecret,
-      { expiresIn: "24h" }
-    );
+    const token = await new jose.SignJWT({ userId: user.id_korisnik, email: user.email, uloga: user.uloga })
+      .setProtectedHeader({ alg: "HS256" })
+      .setExpirationTime("24h")
+      .sign(secret);
 
     const response = NextResponse.json(
       {

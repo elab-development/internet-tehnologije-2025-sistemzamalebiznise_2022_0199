@@ -4,8 +4,13 @@ import type { NextRequest } from "next/server";
 const ALLOWED_ORIGINS = [
   "http://localhost:3000",
   "http://localhost:8080",
+  "http://localhost:8081",
   "http://172.20.10.4:8080",
+  "http://172.20.10.4:8081",
   "http://172.20.10.4:3000",
+  "http://172.17.240.1:3000",
+  "http://172.17.240.1:8080",
+  "http://172.17.240.1:8081",
   "https://shop-scale-buddy.lovable.app",
 ];
 

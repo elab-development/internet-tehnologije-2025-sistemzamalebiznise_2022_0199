@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '@/lib/api';
 import type { Korisnik, Uloga } from '@/lib/types';
 import { ULOGA_LABELS } from '@/lib/types';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {

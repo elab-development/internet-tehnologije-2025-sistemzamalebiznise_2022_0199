@@ -14,14 +14,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Trash2, Loader2 } from 'lucide-react';
 
@@ -74,7 +66,7 @@ export default function NovaNarudzbenica() {
 
   const getSubtotal = (s: Stavka) => {
     const p = getProizvod(s.proizvod_id);
-    return p ? p.cena * s.kolicina : 0;
+    return p ? p.prodajna_cena * s.kolicina : 0;
   };
 
   const ukupno = stavke.reduce((sum, s) => sum + getSubtotal(s), 0);
@@ -108,6 +100,33 @@ export default function NovaNarudzbenica() {
         variant: 'destructive',
       });
       return;
+    }
+
+    if (tip === 'PRODAJA') {
+      const stavkaBezLagera = stavke.find((s) => {
+        const proizvod = getProizvod(s.proizvod_id);
+        if (!proizvod) return true;
+        return s.kolicina > proizvod.kolicina_na_lageru;
+      });
+
+      if (stavkaBezLagera) {
+        const proizvod = getProizvod(stavkaBezLagera.proizvod_id);
+        if (!proizvod) {
+          toast({
+            title: 'Greška',
+            description: 'Izabrani proizvod ne postoji.',
+            variant: 'destructive',
+          });
+          return;
+        }
+
+        toast({
+          title: 'Greška',
+          description: `Nema dovoljan broj proizvoda "${proizvod.naziv}". Na lageru je ${proizvod.kolicina_na_lageru}, tražite ${stavkaBezLagera.kolicina}.`,
+          variant: 'destructive',
+        });
+        return;
+      }
     }
 
     setSaving(true);
@@ -248,7 +267,7 @@ export default function NovaNarudzbenica() {
                             key={p.id_proizvod}
                             value={String(p.id_proizvod)}
                           >
-                            {p.naziv} ({p.sifra}) — {p.cena} RSD
+                            {p.naziv} ({p.sifra}) — {p.prodajna_cena} RSD — lager: {p.kolicina_na_lageru}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -259,11 +278,21 @@ export default function NovaNarudzbenica() {
                     <Input
                       type="number"
                       min="1"
+                      max={
+                        tip === 'PRODAJA' && stavka.proizvod_id
+                          ? getProizvod(stavka.proizvod_id)?.kolicina_na_lageru
+                          : undefined
+                      }
                       value={stavka.kolicina}
                       onChange={(e) =>
                         updateStavka(index, 'kolicina', Number(e.target.value))
                       }
                     />
+                    {tip === 'PRODAJA' && stavka.proizvod_id ? (
+                      <p className="text-xs text-muted-foreground">
+                        Na lageru: {getProizvod(stavka.proizvod_id)?.kolicina_na_lageru ?? 0}
+                      </p>
+                    ) : null}
                   </div>
                   <div className="w-28 text-right pt-5">
                     <span className="text-sm font-medium">

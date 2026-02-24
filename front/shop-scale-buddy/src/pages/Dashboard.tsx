@@ -16,6 +16,8 @@ import {
   Users,
   Plus,
   Loader2,
+  AlertTriangle,
+  Mail,
 } from 'lucide-react';
 
 interface DashboardStats {
@@ -23,6 +25,13 @@ interface DashboardStats {
   dobavljaci: number;
   narudzbenice: number;
   korisnici: number;
+}
+
+interface LowStockProduct {
+  id_proizvod: number;
+  naziv: string;
+  sifra: string;
+  kolicina_na_lageru: number;
 }
 
 export default function Dashboard() {
@@ -34,6 +43,23 @@ export default function Dashboard() {
     korisnici: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [lowStock, setLowStock] = useState<LowStockProduct[]>([]);
+  const [lowStockLoading, setLowStockLoading] = useState(false);
+  const [sendingMail, setSendingMail] = useState(false);
+  const [mailStatus, setMailStatus] = useState<string | null>(null);
+
+  const fetchLowStock = async (withLoader = false) => {
+    if (user?.uloga !== 'VLASNIK' && user?.uloga !== 'RADNIK') return;
+    if (withLoader) setLowStockLoading(true);
+    try {
+      const data = await api.get<{ products?: LowStockProduct[] }>('/api/lager/obavestenja');
+      setLowStock(data.products || []);
+    } catch {
+      setLowStock([]);
+    } finally {
+      if (withLoader) setLowStockLoading(false);
+    }
+  };
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -85,6 +111,43 @@ export default function Dashboard() {
     };
     fetchStats();
   }, [user]);
+
+  useEffect(() => {
+    fetchLowStock(true);
+
+    if (user?.uloga !== 'VLASNIK' && user?.uloga !== 'RADNIK') {
+      return;
+    }
+
+    const intervalId = setInterval(() => {
+      fetchLowStock(false);
+    }, 10000);
+
+    const onFocus = () => {
+      fetchLowStock(false);
+    };
+
+    window.addEventListener('focus', onFocus);
+
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener('focus', onFocus);
+    };
+  }, [user]);
+
+  const handleSendLowStockMail = async () => {
+    setSendingMail(true);
+    setMailStatus(null);
+    try {
+      const data = await api.post<{ message?: string }>('/api/lager/obavestenja');
+      setMailStatus(data.message || 'Mejl je uspešno poslat.');
+      await fetchLowStock(false);
+    } catch (err: unknown) {
+      setMailStatus(err instanceof Error ? err.message : 'Greška pri slanju mejla.');
+    } finally {
+      setSendingMail(false);
+    }
+  };
 
   const statCards = [
     {
@@ -183,6 +246,55 @@ export default function Dashboard() {
               </Button>
             </CardContent>
           </Card>
+
+          {(user?.uloga === 'VLASNIK' || user?.uloga === 'RADNIK') && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5 text-warning" />
+                  Nizak lager (≤ 5)
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {lowStockLoading ? (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Učitavanje proizvoda...
+                  </div>
+                ) : lowStock.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    Trenutno nema proizvoda sa kritično niskim lagerom.
+                  </p>
+                ) : (
+                  <>
+                    <p className="text-sm">
+                      {lowStock.length} proizvoda je na kritičnom lageru.
+                    </p>
+                    <ul className="text-sm text-muted-foreground space-y-1">
+                      {lowStock.map((p) => (
+                        <li key={p.id_proizvod}>
+                          {p.naziv} ({p.sifra}) — {p.kolicina_na_lageru}
+                        </li>
+                      ))}
+                    </ul>
+                    {user?.uloga === 'VLASNIK' && (
+                      <Button onClick={handleSendLowStockMail} disabled={sendingMail} variant="outline">
+                        {sendingMail ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <Mail className="h-4 w-4 mr-2" />
+                        )}
+                        Pošalji mejl za nabavku
+                      </Button>
+                    )}
+                    {mailStatus && (
+                      <p className="text-sm text-muted-foreground">{mailStatus}</p>
+                    )}
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </>
       )}
     </div>

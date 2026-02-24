@@ -15,6 +15,7 @@ import Narudzbenice from "@/pages/Narudzbenice";
 import NovaNarudzbenica from "@/pages/NovaNarudzbenica";
 import DetaljiNarudzbenice from "@/pages/DetaljiNarudzbenice";
 import Korisnici from "@/pages/Korisnici";
+import Analitika from "@/pages/Analitika";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -39,6 +40,7 @@ const App = () => (
                 <Route path="/narudzbenice/nova" element={<NovaNarudzbenica />} />
                 <Route path="/narudzbenice/:id" element={<DetaljiNarudzbenice />} />
                 <Route path="/korisnici" element={<Korisnici />} />
+                <Route path="/analitika" element={<Analitika />} />
               </Route>
             </Route>
             <Route path="*" element={<NotFound />} />
