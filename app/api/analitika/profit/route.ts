@@ -7,6 +7,44 @@ export function OPTIONS(req: NextRequest) {
   return handleOptions(req);
 }
 
+/**
+ * @swagger
+ * /api/analitika/profit:
+ *   get:
+ *     summary: Dohvati analitiku profita
+ *     description: Vraća podatke o profitu formatirane za Google Charts - profit po danima (30 dana), top 5 najprofitabilnijih proizvoda i ukupan profit. Pristup ima samo VLASNIK.
+ *     tags: [Analitika]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Podaci o profitu
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 profitPoDanima:
+ *                   type: array
+ *                   description: Niz za Google Charts [['Datum', 'Profit'], ['24.02.2026', 5000], ...]
+ *                   items:
+ *                     type: array
+ *                 top5Proizvodi:
+ *                   type: array
+ *                   description: Niz za Google Charts [['Proizvod', 'Profit'], ['Laptop', 50000], ...]
+ *                   items:
+ *                     type: array
+ *                 ukupniProfit:
+ *                   type: number
+ *                   example: 150000
+ *                 datumIzvestaja:
+ *                   type: string
+ *                   format: date-time
+ *       401:
+ *         description: Nemate pristup
+ *       403:
+ *         description: Samo vlasnik može pristupiti analitici
+ */
 export async function GET(req: NextRequest) {
   try {
     // Provera autentifikacije

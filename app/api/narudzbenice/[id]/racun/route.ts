@@ -27,8 +27,35 @@ function fmtCurrency(val: number): string {
 }
 
 /**
- * GET /api/narudzbenice/[id]/racun
- * Generise PDF racun za zavrsenu PRODAJU.
+ * @swagger
+ * /api/narudzbenice/{id}/racun:
+ *   get:
+ *     summary: Generiši PDF račun
+ *     description: Generiše PDF račun za završenu PRODAJU narudžbenicu. Račun sadrži podatke o stavkama, cenama i ukupnom iznosu.
+ *     tags: [Narudžbenice]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID narudžbenice
+ *     responses:
+ *       200:
+ *         description: PDF račun
+ *         content:
+ *           application/pdf:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *       400:
+ *         description: Račun je dostupan samo za PRODAJU u statusu ZAVRSENA
+ *       401:
+ *         description: Niste prijavljeni
+ *       404:
+ *         description: Narudžbenica nije pronađena
  */
 export async function GET(
   req: NextRequest,

@@ -223,6 +223,7 @@ DECLARE
   v_stavka JSONB;
   v_ukupna_vrednost NUMERIC := 0;
   v_prodajna_cena NUMERIC;
+  v_nabavna_cena NUMERIC;
   v_kolicina INT;
   v_proizvod_id INT;
 BEGIN
@@ -253,12 +254,18 @@ BEGIN
 
       v_ukupna_vrednost := v_ukupna_vrednost + (v_prodajna_cena * v_kolicina);
     ELSE
-      -- Kod NABAVKE, nema prodajne cene
+      -- Kod NABAVKE, uzmi nabavnu cenu iz proizvoda
+      SELECT nabavna_cena INTO v_nabavna_cena
+      FROM proizvod
+      WHERE id_proizvod = v_proizvod_id;
+
       INSERT INTO stavka_narudzbenice (
         narudzbenica_id, proizvod_id, kolicina, ukupna_cena
       ) VALUES (
-        v_id_narudzbenica, v_proizvod_id, v_kolicina, 0
+        v_id_narudzbenica, v_proizvod_id, v_kolicina, v_nabavna_cena * v_kolicina
       );
+
+      v_ukupna_vrednost := v_ukupna_vrednost + (v_nabavna_cena * v_kolicina);
     END IF;
   END LOOP;
 

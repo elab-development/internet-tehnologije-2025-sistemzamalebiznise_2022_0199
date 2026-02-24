@@ -11,6 +11,36 @@ const VALID_TIP = ['NABAVKA','PRODAJA'] as const;
 
 const DOZVOLJENE_ULOGE_KREIRANJE = ["VLASNIK", "RADNIK"];
 
+/**
+ * @swagger
+ * /api/narudzbenice:
+ *   get:
+ *     summary: Dohvati sve narudžbenice
+ *     description: Vraća listu narudžbenica. DOSTAVLJAC vidi samo sebi dodeljene. Opciono filtriranje po statusu.
+ *     tags: [Narudžbenice]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [KREIRANA, POSLATA, U_TRANSPORTU, PRIMLJENA, ZAVRSENA, OTKAZANA, STORNIRANA]
+ *         description: Filtriraj po statusu
+ *     responses:
+ *       200:
+ *         description: Lista narudžbenica
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Narudzbenica'
+ *       400:
+ *         description: Neispravan status
+ *       401:
+ *         description: Niste prijavljeni
+ */
 export async function GET(req: NextRequest) {
   try {
     const auth = await requireAuth(req);
@@ -81,6 +111,62 @@ export async function GET(req: NextRequest) {
   }
 }
 
+/**
+ * @swagger
+ * /api/narudzbenice:
+ *   post:
+ *     summary: Kreiraj novu narudžbenicu
+ *     description: |
+ *       Kreira novu narudžbenicu sa stavkama. VLASNIK i RADNIK imaju pristup.
+ *       - Za tip NABAVKA: dobavljac_id je obavezan
+ *       - Za tip PRODAJA: dobavljac_id mora biti null, proverava se dostupnost na lageru
+ *     tags: [Narudžbenice]
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [tip, stavke]
+ *             properties:
+ *               tip:
+ *                 type: string
+ *                 enum: [NABAVKA, PRODAJA]
+ *                 example: PRODAJA
+ *               dobavljac_id:
+ *                 type: integer
+ *                 nullable: true
+ *                 description: Obavezno za NABAVKA, null za PRODAJA
+ *               dostavljac_id:
+ *                 type: integer
+ *                 nullable: true
+ *               napomena:
+ *                 type: string
+ *                 nullable: true
+ *               stavke:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   required: [proizvod_id, kolicina]
+ *                   properties:
+ *                     proizvod_id:
+ *                       type: integer
+ *                       example: 1
+ *                     kolicina:
+ *                       type: integer
+ *                       example: 2
+ *     responses:
+ *       201:
+ *         description: Narudžbenica uspešno kreirana
+ *       400:
+ *         description: Validaciona greška
+ *       401:
+ *         description: Niste prijavljeni
+ *       403:
+ *         description: Nemate pristup
+ */
 export async function POST(req: NextRequest) {
   try {
     const auth = await requireAuth(req);

@@ -9,6 +9,53 @@ export function OPTIONS(req: NextRequest) {
 
 const DOZVOLJENE_ULOGE = ["VLASNIK", "RADNIK", "DOSTAVLJAC"];
 
+/**
+ * @swagger
+ * /api/korisnici/{id}:
+ *   patch:
+ *     summary: Promeni ulogu korisnika
+ *     description: Menja ulogu korisniku. Samo VLASNIK ima pristup. Ne možete promeniti sopstvenu ulogu.
+ *     tags: [Korisnici]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID korisnika
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [uloga]
+ *             properties:
+ *               uloga:
+ *                 type: string
+ *                 enum: [VLASNIK, RADNIK, DOSTAVLJAC]
+ *                 example: RADNIK
+ *     responses:
+ *       200:
+ *         description: Uloga uspešno promenjena
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 korisnik:
+ *                   $ref: '#/components/schemas/Korisnik'
+ *       400:
+ *         description: Neispravan ID, uloga obavezna, neispravna uloga, ili pokušaj menjanja sopstvene uloge
+ *       401:
+ *         description: Niste prijavljeni
+ *       403:
+ *         description: Nemate pristup
+ *       404:
+ *         description: Korisnik ne postoji
+ */
 export async function PATCH(
   req: NextRequest,
   ctx: { params: Promise<{ id: string }> }

@@ -8,6 +8,45 @@ export function OPTIONS(req: NextRequest) {
 
 const VALID_STATUS = ['KREIRANA', 'POSLATA', 'U_TRANSPORTU', 'PRIMLJENA', 'ZAVRSENA', 'OTKAZANA', 'STORNIRANA'] as const;
 
+/**
+ * @swagger
+ * /api/narudzbenice/{id}:
+ *   get:
+ *     summary: Dohvati narudžbenicu po ID-ju
+ *     description: Vraća detalje narudžbenice sa svim stavkama. DOSTAVLJAC vidi samo sebi dodeljene narudžbenice.
+ *     tags: [Narudžbenice]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID narudžbenice
+ *     responses:
+ *       200:
+ *         description: Detalji narudžbenice sa stavkama
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/Narudzbenica'
+ *                 - type: object
+ *                   properties:
+ *                     stavke:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/StavkaNarudzbenice'
+ *       400:
+ *         description: Neispravan ID
+ *       401:
+ *         description: Nemate pristup
+ *       403:
+ *         description: Nemate pristup (dostavljac)
+ *       404:
+ *         description: Narudžbenica nije pronađena
+ */
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -65,7 +104,49 @@ export async function GET(
   }
 }
 
-
+/**
+ * @swagger
+ * /api/narudzbenice/{id}:
+ *   patch:
+ *     summary: Promeni status narudžbenice
+ *     description: Menja status narudžbenice i automatski ažurira lager pri završavanju. VLASNIK i RADNIK mogu menjati, DOSTAVLJAC samo za dodeljene.
+ *     tags: [Narudžbenice]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID narudžbenice
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [status]
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum: [KREIRANA, POSLATA, U_TRANSPORTU, PRIMLJENA, ZAVRSENA, OTKAZANA, STORNIRANA]
+ *                 example: ZAVRSENA
+ *               dostavljac_id:
+ *                 type: integer
+ *                 description: Samo VLASNIK može da dodeli dostavljaca
+ *     responses:
+ *       200:
+ *         description: Status uspešno ažuriran
+ *       400:
+ *         description: Nevalidan status ili neispravan JSON
+ *       401:
+ *         description: Nemate pristup
+ *       403:
+ *         description: Nemate pravo da menjate status
+ *       404:
+ *         description: Narudžbenica nije pronađena
+ */
 // Promena statusa i ažuriranje lagera kad se završi narudžbenica
 export async function PATCH(
   req: NextRequest,
@@ -192,6 +273,34 @@ export async function PATCH(
   }
 }
 
+/**
+ * @swagger
+ * /api/narudzbenice/{id}:
+ *   delete:
+ *     summary: Obriši narudžbenicu
+ *     description: Briše narudžbenicu i njene stavke. Dozvoljeno samo za narudžbenice u statusu KREIRANA. Samo VLASNIK ima pristup.
+ *     tags: [Narudžbenice]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID narudžbenice
+ *     responses:
+ *       200:
+ *         description: Narudžbenica uspešno obrisana
+ *       400:
+ *         description: Možete obrisati samo narudžbenice u statusu KREIRANA
+ *       401:
+ *         description: Nemate pristup
+ *       403:
+ *         description: Samo vlasnik može da briše narudžbenice
+ *       404:
+ *         description: Narudžbenica nije pronađena
+ */
 export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }

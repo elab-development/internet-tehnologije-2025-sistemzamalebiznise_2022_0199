@@ -6,6 +6,27 @@ export function OPTIONS(req: NextRequest) {
   return handleOptions(req);
 }
 
+/**
+ * @swagger
+ * /api/dobavljaci:
+ *   get:
+ *     summary: Dohvati sve dobavljače
+ *     description: Vraća listu svih dobavljača sortiranih po ID-ju.
+ *     tags: [Dobavljači]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista dobavljača
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Dobavljac'
+ *       401:
+ *         description: Neautorizovan pristup
+ */
 export async function GET(req: NextRequest) {
   try {
     const auth = await requireAuth(req);
@@ -23,6 +44,47 @@ export async function GET(req: NextRequest) {
   }
 }
 
+/**
+ * @swagger
+ * /api/dobavljaci:
+ *   post:
+ *     summary: Kreiraj novog dobavljača
+ *     description: Dodaje novog dobavljača u sistem.
+ *     tags: [Dobavljači]
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [naziv_firme]
+ *             properties:
+ *               naziv_firme:
+ *                 type: string
+ *                 example: Tech Distributer d.o.o.
+ *               telefon:
+ *                 type: string
+ *                 example: "+381601234567"
+ *               email:
+ *                 type: string
+ *                 example: info@techdist.rs
+ *               adresa:
+ *                 type: string
+ *                 example: Bulevar Oslobođenja 10, Beograd
+ *     responses:
+ *       201:
+ *         description: Dobavljač uspešno kreiran
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Dobavljac'
+ *       400:
+ *         description: Naziv firme je obavezan
+ *       401:
+ *         description: Neautorizovan pristup
+ */
 export async function POST(req: NextRequest) {
   try {
     const auth = await requireAuth(req);

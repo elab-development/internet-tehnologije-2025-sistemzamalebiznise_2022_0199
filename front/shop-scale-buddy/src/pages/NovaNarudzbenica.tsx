@@ -66,7 +66,9 @@ export default function NovaNarudzbenica() {
 
   const getSubtotal = (s: Stavka) => {
     const p = getProizvod(s.proizvod_id);
-    return p ? p.prodajna_cena * s.kolicina : 0;
+    if (!p) return 0;
+    const cena = tip === 'NABAVKA' ? p.nabavna_cena : p.prodajna_cena;
+    return cena * s.kolicina;
   };
 
   const ukupno = stavke.reduce((sum, s) => sum + getSubtotal(s), 0);
@@ -268,7 +270,7 @@ export default function NovaNarudzbenica() {
                               key={p.id_proizvod}
                               value={String(p.id_proizvod)}
                             >
-                              {p.naziv} ({p.sifra}) — {p.prodajna_cena} RSD — lager: {p.kolicina_na_lageru}
+                              {p.naziv} ({p.sifra}) — {tip === 'NABAVKA' ? p.nabavna_cena : p.prodajna_cena} RSD — lager: {p.kolicina_na_lageru}
                             </SelectItem>
                           ))}
                         </SelectContent>

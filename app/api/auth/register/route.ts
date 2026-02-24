@@ -8,6 +8,56 @@ export function OPTIONS(req: NextRequest) {
 
 const DOZVOLJENE_ULOGE = ["VLASNIK", "RADNIK", "DOSTAVLJAC"] as const;
 
+/**
+ * @swagger
+ * /api/auth/register:
+ *   post:
+ *     summary: Registracija novog korisnika
+ *     description: Registruje novog korisnika u sistem. Lozinka mora imati najmanje 6 karaktera.
+ *     tags: [Autentifikacija]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [ime, prezime, email, lozinka, uloga]
+ *             properties:
+ *               ime:
+ *                 type: string
+ *                 example: Marko
+ *               prezime:
+ *                 type: string
+ *                 example: Marković
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: marko@example.com
+ *               lozinka:
+ *                 type: string
+ *                 minLength: 6
+ *                 example: lozinka123
+ *               uloga:
+ *                 type: string
+ *                 enum: [VLASNIK, RADNIK, DOSTAVLJAC]
+ *                 example: RADNIK
+ *     responses:
+ *       201:
+ *         description: Korisnik uspešno registrovan
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 user:
+ *                   $ref: '#/components/schemas/Korisnik'
+ *       400:
+ *         description: Validaciona greška
+ *       409:
+ *         description: Email je već u upotrebi
+ */
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();

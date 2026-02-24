@@ -9,6 +9,29 @@ export function OPTIONS(req: NextRequest) {
 
 const DOZVOLJENE_ULOGE = ["VLASNIK", "RADNIK"];
 
+/**
+ * @swagger
+ * /api/lager:
+ *   get:
+ *     summary: Dohvati stanje lagera
+ *     description: Vraća sve proizvode sa informacijama o količinama na lageru. VLASNIK i RADNIK imaju pristup.
+ *     tags: [Lager]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista proizvoda sa stanjem lagera
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Proizvod'
+ *       401:
+ *         description: Niste prijavljeni
+ *       403:
+ *         description: Nemate pristup (DOSTAVLJAC)
+ */
 export async function GET(req: NextRequest) {
   try {
     const auth = await requireAuth(req);

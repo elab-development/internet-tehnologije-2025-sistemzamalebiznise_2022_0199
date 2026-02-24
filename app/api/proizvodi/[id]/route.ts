@@ -6,6 +6,34 @@ export function OPTIONS(req: NextRequest) {
   return handleOptions(req);
 }
 
+/**
+ * @swagger
+ * /api/proizvodi/{id}:
+ *   get:
+ *     summary: Dohvati proizvod po ID-ju
+ *     description: Vraća detalje jednog proizvoda.
+ *     tags: [Proizvodi]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID proizvoda
+ *     responses:
+ *       200:
+ *         description: Detalji proizvoda
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Proizvod'
+ *       403:
+ *         description: Nemate pristup
+ *       404:
+ *         description: Proizvod nije pronađen
+ */
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -38,6 +66,55 @@ export async function GET(
   }
 }
 
+/**
+ * @swagger
+ * /api/proizvodi/{id}:
+ *   put:
+ *     summary: Ažuriraj proizvod
+ *     description: Ažurira podatke proizvoda. Nabavna cena se NE SME menjati. Prodajna cena mora biti veća od nabavne. Samo VLASNIK ima pristup.
+ *     tags: [Proizvodi]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID proizvoda
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               naziv:
+ *                 type: string
+ *               sifra:
+ *                 type: string
+ *               prodajna_cena:
+ *                 type: number
+ *               kolicina_na_lageru:
+ *                 type: integer
+ *               minimalna_kolicina:
+ *                 type: integer
+ *               jedinica_mere:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Proizvod uspešno ažuriran
+ *       400:
+ *         description: Prodajna cena mora biti veća od nabavne
+ *       401:
+ *         description: Neautorizovan pristup
+ *       403:
+ *         description: Samo vlasnik može da menja proizvode
+ *       404:
+ *         description: Proizvod nije pronađen
+ *       409:
+ *         description: Šifra proizvoda već postoji
+ */
 export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -99,6 +176,32 @@ export async function PUT(
   }
 }
 
+/**
+ * @swagger
+ * /api/proizvodi/{id}:
+ *   delete:
+ *     summary: Obriši proizvod
+ *     description: Briše proizvod iz sistema. Samo VLASNIK ima pristup.
+ *     tags: [Proizvodi]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID proizvoda
+ *     responses:
+ *       200:
+ *         description: Proizvod uspešno obrisan
+ *       401:
+ *         description: Neautorizovan pristup
+ *       403:
+ *         description: Samo vlasnik može da briše proizvode
+ *       404:
+ *         description: Proizvod nije pronađen
+ */
 export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
