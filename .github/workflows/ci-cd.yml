@@ -1,10 +1,3 @@
-# ============================================================================
-# CI/CD Pipeline - GitHub Actions
-# ============================================================================
-# Automatski pokrece testove, linting, build Docker image-a
-# na svaki push i pull request.
-# ============================================================================
-
 name: CI/CD Pipeline
 
 on:
@@ -18,9 +11,6 @@ env:
   DOCKER_IMAGE_FRONTEND: sistemzamalebiznise-frontend
 
 jobs:
-  # ========================================================================
-  # JOB 1: Lint i testovi za frontend (Vite + React)
-  # ========================================================================
   frontend-test:
     name: Frontend - Lint & Test
     runs-on: ubuntu-latest
@@ -51,9 +41,6 @@ jobs:
       - name: Build provera
         run: npm run build
 
-  # ========================================================================
-  # JOB 2: Lint i build za backend (Next.js)
-  # ========================================================================
   backend-test:
     name: Backend - Lint & Build
     runs-on: ubuntu-latest
@@ -80,9 +67,6 @@ jobs:
           DATABASE_URL: postgresql://admin:admin@localhost:5432/iteh_baza
           JWT_SECRET: test_jwt_secret
 
-  # ========================================================================
-  # JOB 3: Build Docker image-a
-  # ========================================================================
   docker-build:
     name: Docker Build
     runs-on: ubuntu-latest
@@ -115,9 +99,6 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  # ========================================================================
-  # JOB 4: Docker Compose integracija test
-  # ========================================================================
   integration-test:
     name: Docker Compose - Integration
     runs-on: ubuntu-latest
