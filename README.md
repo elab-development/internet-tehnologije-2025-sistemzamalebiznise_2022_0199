@@ -1,7 +1,7 @@
 # Sistem za Male Biznise (ShopScale Buddy)
 
 > Projekat iz predmeta **Internet tehnologije** — FON, Univerzitet u Beogradu  
-> Student: **2022/0199**
+> Studenti: **2022/0199, 2022/0024**
 
 ---
 
