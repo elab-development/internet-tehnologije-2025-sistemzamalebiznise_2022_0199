@@ -6,6 +6,60 @@ export function OPTIONS(req: NextRequest) {
   return handleOptions(req);
 }
 
+/**
+ * @swagger
+ * /api/dashboard:
+ *   get:
+ *     summary: Dohvati podatke za dashboard
+ *     description: Vraća agregirane podatke - brojeve proizvoda, dobavljača, korisnika, narudžbenica, stanje lagera i poslednje narudžbenice.
+ *     tags: [Dashboard]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Dashboard podaci
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 counts:
+ *                   type: object
+ *                   properties:
+ *                     proizvodi:
+ *                       type: integer
+ *                     dobavljaci:
+ *                       type: integer
+ *                     korisnici:
+ *                       type: integer
+ *                     narudzbenice:
+ *                       type: integer
+ *                 lager:
+ *                   type: object
+ *                   properties:
+ *                     ukupna_kolicina:
+ *                       type: integer
+ *                     ukupna_vrednost:
+ *                       type: number
+ *                 narudzbenice:
+ *                   type: object
+ *                   properties:
+ *                     po_tipu:
+ *                       type: object
+ *                       properties:
+ *                         NABAVKA:
+ *                           type: integer
+ *                         PRODAJA:
+ *                           type: integer
+ *                     po_statusu:
+ *                       type: object
+ *                     recent:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *       401:
+ *         description: Nemate pristup
+ */
 export async function GET(req: NextRequest) {
   try {
     const auth = await requireAuth(req);

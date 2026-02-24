@@ -37,7 +37,8 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Loader2, Trash2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Trash2, FileText, Download } from 'lucide-react';
+import { getApiBaseUrl } from '@/lib/config';
 
 const statusColors: Record<StatusNarudzbenice, string> = {
   KREIRANA: 'bg-muted text-muted-foreground',
@@ -70,7 +71,8 @@ export default function DetaljiNarudzbenice() {
 
   const isVlasnik = user?.uloga === 'VLASNIK';
   const isDostavljac = user?.uloga === 'DOSTAVLJAC';
-  const canChangeStatus = isVlasnik || isDostavljac;
+  const isRadnik = user?.uloga === 'RADNIK';
+  const canChangeStatus = isVlasnik || isDostavljac || isRadnik;
 
   const fetchNarudzbenica = async () => {
     try {
@@ -178,7 +180,10 @@ export default function DetaljiNarudzbenice() {
   }
 
   const tipTransitions = narudzbenica ? getTransitionsForType(narudzbenica.tip) : VALID_TRANSITIONS;
-  const validStatuses = (tipTransitions[narudzbenica.status] || []);
+  // RADNIK moze samo PRODAJU da menja
+  const validStatuses = isRadnik && narudzbenica.tip !== 'PRODAJA'
+    ? []
+    : (tipTransitions[narudzbenica.status] || []);
 
   return (
     <div className="space-y-6 animate-fade-in max-w-4xl">
@@ -289,6 +294,49 @@ export default function DetaljiNarudzbenice() {
           </div>
         </CardContent>
       </Card>
+
+      {/* PDF Racun - VLASNIK i RADNIK mogu za zavrsenu PRODAJU */}
+      {narudzbenica.tip === 'PRODAJA' && narudzbenica.status === 'ZAVRSENA' && (isVlasnik || isRadnik) && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Račun</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button
+                onClick={() => {
+                  const url = `${getApiBaseUrl()}/api/narudzbenice/${narudzbenica.id_narudzbenica}/racun`;
+                  window.open(url, '_blank');
+                }}
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                Otvori PDF račun
+              </Button>
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  try {
+                    const url = `${getApiBaseUrl()}/api/narudzbenice/${narudzbenica.id_narudzbenica}/racun`;
+                    const res = await fetch(url, { credentials: 'include' });
+                    if (!res.ok) throw new Error('Greška pri preuzimanju');
+                    const blob = await res.blob();
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(blob);
+                    link.download = `racun_${narudzbenica.id_narudzbenica}.pdf`;
+                    link.click();
+                    URL.revokeObjectURL(link.href);
+                  } catch {
+                    toast({ title: 'Greška', description: 'Nije moguće preuzeti PDF.', variant: 'destructive' });
+                  }
+                }}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Preuzmi PDF
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Actions */}
       {canChangeStatus && validStatuses.length > 0 && (

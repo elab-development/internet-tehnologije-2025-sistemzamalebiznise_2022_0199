@@ -7,6 +7,50 @@ export function OPTIONS(req: NextRequest) {
   return handleOptions(req);
 }
 
+/**
+ * @swagger
+ * /api/auth/login:
+ *   post:
+ *     summary: Prijava korisnika
+ *     description: Autentifikuje korisnika putem email-a i lozinke. Postavlja JWT token kao HttpOnly cookie.
+ *     tags: [Autentifikacija]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email, lozinka]
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: marko@example.com
+ *               lozinka:
+ *                 type: string
+ *                 example: lozinka123
+ *     responses:
+ *       200:
+ *         description: Uspešna prijava
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 user:
+ *                   $ref: '#/components/schemas/Korisnik'
+ *         headers:
+ *           Set-Cookie:
+ *             description: JWT token kao HttpOnly cookie
+ *             schema:
+ *               type: string
+ *       400:
+ *         description: Neispravan JSON body
+ *       401:
+ *         description: Pogrešan email ili lozinka
+ */
 export async function POST(req: NextRequest) {
   try {
     let body: any = {};

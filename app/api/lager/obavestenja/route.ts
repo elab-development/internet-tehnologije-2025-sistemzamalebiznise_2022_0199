@@ -9,6 +9,42 @@ export function OPTIONS(req: NextRequest) {
 
 const DOZVOLJENE_ULOGE = ['VLASNIK', 'RADNIK'];
 
+/**
+ * @swagger
+ * /api/lager/obavestenja:
+ *   get:
+ *     summary: Dohvati proizvode sa niskim lagerom
+ *     description: Vraća proizvode čija je količina na lageru <= 5. VLASNIK i RADNIK imaju pristup.
+ *     tags: [Lager]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Proizvodi sa niskim lagerom
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 threshold:
+ *                   type: integer
+ *                   example: 5
+ *                 count:
+ *                   type: integer
+ *                 products:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       naziv:
+ *                         type: string
+ *                       kolicina_na_lageru:
+ *                         type: integer
+ *       401:
+ *         description: Niste prijavljeni
+ *       403:
+ *         description: Nemate pristup
+ */
 export async function GET(req: NextRequest) {
   try {
     const auth = await requireAuth(req);
@@ -35,6 +71,23 @@ export async function GET(req: NextRequest) {
   }
 }
 
+/**
+ * @swagger
+ * /api/lager/obavestenja:
+ *   post:
+ *     summary: Pošalji mejl upozorenje za nizak lager
+ *     description: Šalje email obaveštenje vlasniku o proizvodima sa niskim zalihama.
+ *     tags: [Lager]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Mejl uspešno poslat ili nema proizvoda sa niskim lagerom
+ *       401:
+ *         description: Niste prijavljeni
+ *       403:
+ *         description: Nemate pristup
+ */
 export async function POST(req: NextRequest) {
   try {
     const auth = await requireAuth(req);

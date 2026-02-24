@@ -7,6 +7,32 @@ export function OPTIONS(req: NextRequest) {
   return handleOptions(req);
 }
 
+/**
+ * @swagger
+ * /api/korisnici:
+ *   get:
+ *     summary: Dohvati sve korisnike
+ *     description: Vraća listu svih registrovanih korisnika. Pristup ima samo VLASNIK.
+ *     tags: [Korisnici]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista korisnika
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 korisnici:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Korisnik'
+ *       401:
+ *         description: Niste prijavljeni
+ *       403:
+ *         description: Nemate pristup
+ */
 export async function GET(req: NextRequest) {
   try {
     const user = await requireAuth(req);

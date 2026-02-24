@@ -122,11 +122,27 @@ export default function Proizvodi() {
     setDialogOpen(true);
   };
 
+  const cenaGreska =
+    form.nabavna_cena !== '' &&
+    form.prodajna_cena !== '' &&
+    Number(form.prodajna_cena) <= Number(form.nabavna_cena)
+      ? 'Prodajna cena mora biti veća od nabavne'
+      : '';
+
   const handleSave = async () => {
     if (!form.naziv.trim() || !form.sifra.trim() || !form.nabavna_cena || !form.prodajna_cena || !form.jedinica_mere.trim()) {
       toast({
         title: 'Greška',
         description: 'Popunite sva obavezna polja.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (cenaGreska) {
+      toast({
+        title: 'Greška',
+        description: cenaGreska,
         variant: 'destructive',
       });
       return;
@@ -331,6 +347,9 @@ export default function Proizvodi() {
                 />
               </div>
             </div>
+            {cenaGreska && (
+              <p className="text-sm text-destructive">{cenaGreska}</p>
+            )}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label>Količina na lageru</Label>
@@ -359,7 +378,7 @@ export default function Proizvodi() {
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
               Otkaži
             </Button>
-            <Button onClick={handleSave} disabled={saving}>
+            <Button onClick={handleSave} disabled={saving || !!cenaGreska}>
               {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {editId ? 'Sačuvaj' : 'Dodaj'}
             </Button>

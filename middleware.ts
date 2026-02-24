@@ -32,6 +32,12 @@ function addSecurityHeaders(res: NextResponse): NextResponse {
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
+  // Swagger UI stranica — bez restriktivnog CSP-a jer koristi inline stilove/skripte
+  if (pathname.startsWith("/swagger") || pathname.startsWith("/api/swagger")) {
+    const res = NextResponse.next();
+    return res;
+  }
+
   // 1) Za API rute — samo dodaj security headere, auth rade same rute
   if (pathname.startsWith("/api")) {
     const res = NextResponse.next();

@@ -15,9 +15,12 @@
     "jsonwebtoken": "^9.0.3",
     "next": "16.1.6",
     "nodemailer": "^8.0.1",
+    "pdf-lib": "^1.17.1",
     "pg": "^8.18.0",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-react": "^5.31.2"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -27,6 +30,8 @@
     "@types/pg": "^8.16.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/swagger-jsdoc": "^6.0.4",
+    "@types/swagger-ui-react": "^5.18.0",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "tailwindcss": "^4",

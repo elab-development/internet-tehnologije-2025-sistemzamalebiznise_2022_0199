@@ -66,7 +66,9 @@ export default function NovaNarudzbenica() {
 
   const getSubtotal = (s: Stavka) => {
     const p = getProizvod(s.proizvod_id);
-    return p ? p.prodajna_cena * s.kolicina : 0;
+    if (!p) return 0;
+    const cena = tip === 'NABAVKA' ? p.nabavna_cena : p.prodajna_cena;
+    return cena * s.kolicina;
   };
 
   const ukupno = stavke.reduce((sum, s) => sum + getSubtotal(s), 0);
@@ -248,68 +250,70 @@ export default function NovaNarudzbenica() {
               {stavke.map((stavka, index) => (
                 <div
                   key={index}
-                  className="flex flex-col sm:flex-row items-start sm:items-end gap-3 p-3 rounded-lg bg-muted/50"
+                  className="p-3 rounded-lg bg-muted/50"
                 >
-                  <div className="flex-1 space-y-1 w-full">
-                    <Label className="text-xs">Proizvod</Label>
-                    <Select
-                      value={stavka.proizvod_id ? String(stavka.proizvod_id) : ''}
-                      onValueChange={(v) =>
-                        updateStavka(index, 'proizvod_id', Number(v))
-                      }
+                  <div className="flex flex-row items-start gap-3">
+                    <div className="flex-1 min-w-0 space-y-1">
+                      <Label className="text-xs">Proizvod</Label>
+                      <Select
+                        value={stavka.proizvod_id ? String(stavka.proizvod_id) : ''}
+                        onValueChange={(v) =>
+                          updateStavka(index, 'proizvod_id', Number(v))
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Izaberite proizvod" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {proizvodi.map((p) => (
+                            <SelectItem
+                              key={p.id_proizvod}
+                              value={String(p.id_proizvod)}
+                            >
+                              {p.naziv} ({p.sifra}) — {tip === 'NABAVKA' ? p.nabavna_cena : p.prodajna_cena} RSD — lager: {p.kolicina_na_lageru}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="w-28 shrink-0 space-y-1">
+                      <Label className="text-xs">Količina</Label>
+                      <Input
+                        type="number"
+                        min="1"
+                        max={
+                          tip === 'PRODAJA' && stavka.proizvod_id
+                            ? getProizvod(stavka.proizvod_id)?.kolicina_na_lageru
+                            : undefined
+                        }
+                        value={stavka.kolicina}
+                        onChange={(e) =>
+                          updateStavka(index, 'kolicina', Number(e.target.value))
+                        }
+                      />
+                    </div>
+                    <div className="w-28 shrink-0 text-right mt-6">
+                      <span className="text-sm font-medium">
+                        {getSubtotal(stavka).toLocaleString('sr-RS', {
+                          minimumFractionDigits: 2,
+                        })}{' '}
+                        RSD
+                      </span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="shrink-0 mt-5"
+                      onClick={() => removeStavka(index)}
                     >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Izaberite proizvod" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {proizvodi.map((p) => (
-                          <SelectItem
-                            key={p.id_proizvod}
-                            value={String(p.id_proizvod)}
-                          >
-                            {p.naziv} ({p.sifra}) — {p.prodajna_cena} RSD — lager: {p.kolicina_na_lageru}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
                   </div>
-                  <div className="w-28 space-y-1">
-                    <Label className="text-xs">Količina</Label>
-                    <Input
-                      type="number"
-                      min="1"
-                      max={
-                        tip === 'PRODAJA' && stavka.proizvod_id
-                          ? getProizvod(stavka.proizvod_id)?.kolicina_na_lageru
-                          : undefined
-                      }
-                      value={stavka.kolicina}
-                      onChange={(e) =>
-                        updateStavka(index, 'kolicina', Number(e.target.value))
-                      }
-                    />
-                    {tip === 'PRODAJA' && stavka.proizvod_id ? (
-                      <p className="text-xs text-muted-foreground">
-                        Na lageru: {getProizvod(stavka.proizvod_id)?.kolicina_na_lageru ?? 0}
-                      </p>
-                    ) : null}
-                  </div>
-                  <div className="w-28 text-right pt-5">
-                    <span className="text-sm font-medium">
-                      {getSubtotal(stavka).toLocaleString('sr-RS', {
-                        minimumFractionDigits: 2,
-                      })}{' '}
-                      RSD
-                    </span>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="shrink-0"
-                    onClick={() => removeStavka(index)}
-                  >
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
+                  {tip === 'PRODAJA' && stavka.proizvod_id ? (
+                    <p className="text-xs text-muted-foreground mt-1 ml-0">
+                      Na lageru: {getProizvod(stavka.proizvod_id)?.kolicina_na_lageru ?? 0}
+                    </p>
+                  ) : null}
                 </div>
               ))}
 

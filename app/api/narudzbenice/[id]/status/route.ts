@@ -24,8 +24,7 @@ const NABAVKA_TRANSITIONS: Record<string, string[]> = {
 
 // Dozvoljeni prelazi statusa za PRODAJU
 const PRODAJA_TRANSITIONS: Record<string, string[]> = {
-  KREIRANA: ['STORNIRANA', 'ZAVRSENA'],
-  POSLATA: [],
+  KREIRANA: ['ZAVRSENA', 'STORNIRANA'],
   U_TRANSPORTU: [],
   ZAVRSENA: [],
   OTKAZANA: [],
@@ -33,12 +32,54 @@ const PRODAJA_TRANSITIONS: Record<string, string[]> = {
 };
 
 /**
- * PATCH /api/narudzbenice/[id]/status
- * 
- * Menja status narudžbenice i automatski upravlja lagerom prema poslovnim pravilima:
- * - NABAVKA: status ZAVRSENA povećava lager
- * - PRODAJA: status ZAVRSENA smanjuje lager (sa proverom dostupnosti)
- * - STORNIRANJE: dozvoljeno samo ako je status KREIRANA
+ * @swagger
+ * /api/narudzbenice/{id}/status:
+ *   patch:
+ *     summary: Promeni status narudžbenice (sa upravom lagerom)
+ *     description: |
+ *       Menja status narudžbenice i automatski upravlja lagerom:
+ *       - NABAVKA ZAVRSENA: povećava lager
+ *       - PRODAJA ZAVRSENA: smanjuje lager (sa proverom dostupnosti)
+ *       - STORNIRANJE: dozvoljeno samo iz statusa KREIRANA, zahteva razlog
+ *       
+ *       Dozvoljeni prelazi za NABAVKU: KREIRANA → U_TRANSPORTU/OTKAZANA, U_TRANSPORTU → ZAVRSENA
+ *       Dozvoljeni prelazi za PRODAJU: KREIRANA → ZAVRSENA/STORNIRANA
+ *     tags: [Narudžbenice]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID narudžbenice
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [status]
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum: [KREIRANA, U_TRANSPORTU, ZAVRSENA, OTKAZANA, STORNIRANA]
+ *                 example: ZAVRSENA
+ *               razlog_storniranja:
+ *                 type: string
+ *                 description: Obavezno ako je status STORNIRANA
+ *     responses:
+ *       200:
+ *         description: Status uspešno promenjen
+ *       400:
+ *         description: Nevalidan status, prelaz nije dozvoljen, ili nema dovoljno zaliha
+ *       401:
+ *         description: Niste prijavljeni
+ *       403:
+ *         description: Nemate pristup
+ *       404:
+ *         description: Narudžbenica nije pronađena
  */
 export async function PATCH(
   req: NextRequest,

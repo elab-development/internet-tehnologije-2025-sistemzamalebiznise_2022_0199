@@ -5,6 +5,25 @@ export function OPTIONS(req: NextRequest) {
   return handleOptions(req);
 }
 
+/**
+ * @swagger
+ * /api/auth/logout:
+ *   post:
+ *     summary: Odjava korisnika
+ *     description: Briše JWT token cookie i odjavljuje korisnika.
+ *     tags: [Autentifikacija]
+ *     responses:
+ *       200:
+ *         description: Uspešna odjava
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Uspešno ste se odjavili
+ */
 export async function POST(req: NextRequest) {
   const response = NextResponse.json(
     { message: "Uspešno ste se odjavili" },

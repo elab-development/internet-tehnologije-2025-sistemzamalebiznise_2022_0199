@@ -1,0 +1,28 @@
+# Zavisnosti
+node_modules
+npm-debug.log*
+
+# Next.js build izlaz
+.next
+
+# Git
+.git
+.gitignore
+
+# Docker fajlovi (ne kopirati u kontejner)
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Frontend (zaseban projekat)
+front
+
+# Migracije (pokrecu se odvojeno)
+migrations
+
+# Razvojni fajlovi
+*.md
+.env
+.env.local
+.env.development
+.env.test
