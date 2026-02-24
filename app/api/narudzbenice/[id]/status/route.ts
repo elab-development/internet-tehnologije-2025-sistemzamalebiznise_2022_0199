@@ -24,7 +24,7 @@ const NABAVKA_TRANSITIONS: Record<string, string[]> = {
 
 // Dozvoljeni prelazi statusa za PRODAJU
 const PRODAJA_TRANSITIONS: Record<string, string[]> = {
-  KREIRANA: ['STORNIRANA', 'ZAVRSENA'],
+  KREIRANA: ['ZAVRSENA', 'STORNIRANA'],
   POSLATA: [],
   U_TRANSPORTU: [],
   ZAVRSENA: [],

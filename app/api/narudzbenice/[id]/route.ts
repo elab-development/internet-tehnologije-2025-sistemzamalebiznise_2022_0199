@@ -86,8 +86,8 @@ export async function PATCH(
     const uloga = (auth as any).uloga;
     const userId = (auth as any).userId;
 
-    // samo vlasnik i dostavljač menjaju status
-    if (uloga !== "VLASNIK" && uloga !== "DOSTAVLJAC") {
+    // VLASNIK i DOSTAVLJAC menjaju sve; RADNIK samo PRODAJU
+    if (uloga !== "VLASNIK" && uloga !== "DOSTAVLJAC" && uloga !== "RADNIK") {
       return addCorsHeaders(req, NextResponse.json({ error: "Nemate pravo da menjate status" }, { status: 403 }));
     }
 
@@ -128,6 +128,12 @@ export async function PATCH(
 
       const stariStatus = curRes.rows[0].status;
       const tip = curRes.rows[0].tip;
+
+      // RADNIK sme samo PRODAJU
+      if (uloga === "RADNIK" && tip !== "PRODAJA") {
+        await query('ROLLBACK');
+        return addCorsHeaders(req, NextResponse.json({ error: "Radnik može menjati status samo za PRODAJU" }, { status: 403 }));
+      }
 
       const updRes = await query(
         `UPDATE narudzbenica
