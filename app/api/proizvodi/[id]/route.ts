@@ -56,6 +56,17 @@ export async function PUT(
 
     const { naziv, sifra, prodajna_cena, kolicina_na_lageru, minimalna_kolicina, jedinica_mere } = await req.json();
 
+    // Provera da prodajna cena nije manja od nabavne
+    if (prodajna_cena !== undefined) {
+      const existing = await query(`SELECT nabavna_cena FROM proizvod WHERE id_proizvod = $1`, [productId]);
+      if (existing.rows.length > 0 && Number(prodajna_cena) <= Number(existing.rows[0].nabavna_cena)) {
+        return addCorsHeaders(req, NextResponse.json(
+          { error: "Prodajna cena mora biti veća od nabavne" },
+          { status: 400 }
+        ));
+      }
+    }
+
     // VAŽNO: nabavna_cena se NE SME menjati nakon kreiranja!
     // Ažuriramo samo ostala polja
     const result = await query(

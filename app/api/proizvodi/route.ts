@@ -53,6 +53,13 @@ export async function POST(req: NextRequest) {
       ));
     }
 
+    if (Number(prodajna_cena) <= Number(nabavna_cena)) {
+      return addCorsHeaders(req, NextResponse.json(
+        { error: "Prodajna cena mora biti veća od nabavne" },
+        { status: 400 }
+      ));
+    }
+
     const result = await query(
       `INSERT INTO proizvod (naziv, sifra, cena, nabavna_cena, prodajna_cena, kolicina_na_lageru, minimalna_kolicina, jedinica_mere)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)

@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* Slusaj na svim mreznim interfejsima */
+  /* Standalone izlaz za Docker optimizaciju */
+  output: "standalone",
   serverExternalPackages: [],
 };
 
