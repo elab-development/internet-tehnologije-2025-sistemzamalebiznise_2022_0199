@@ -1,30 +1,6 @@
-
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-
-// CORS konfiguracija: dozvoljen samo Vercel domen
-const ALLOWED_ORIGIN = "https://internet-tehnologije-2025-sistemzam.vercel.app";
-
-function handleCors(req: NextRequest) {
-  const origin = req.headers.get("origin");
-  if (origin === ALLOWED_ORIGIN) {
-    const res = NextResponse.next();
-    res.headers.set("Access-Control-Allow-Origin", ALLOWED_ORIGIN);
-    res.headers.set("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
-    res.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
-    res.headers.set("Access-Control-Allow-Credentials", "true");
-    if (req.method === "OPTIONS") {
-      // Preflight zahtevi
-      return new NextResponse(null, { status: 204, headers: res.headers });
-    }
-    return res;
-  } else if (origin) {
-    // Odbij sve ostale domene
-    return new NextResponse("Forbidden", { status: 403 });
-  }
-  // Ako nema origin headera (npr. server-to-server), pusti dalje
-  return null;
-}
+import { addCorsHeaders, handleOptions } from "./lib/cors";
 
 /**
  * Security middleware:
@@ -59,20 +35,19 @@ export function middleware(req: NextRequest) {
 
   // CORS na samom početku za API rute
   if (pathname.startsWith("/api")) {
-    const corsResult = handleCors(req);
-    if (corsResult) return corsResult;
+    // Preflight OPTIONS zahtevi
+    if (req.method === "OPTIONS") {
+      return handleOptions(req);
+    }
+    // Dodaj CORS header-e za sve ostale API zahteve
+    const res = NextResponse.next();
+    return addCorsHeaders(req, res);
   }
 
   // Swagger UI stranica — bez restriktivnog CSP-a jer koristi inline stilove/skripte
   if (pathname.startsWith("/swagger") || pathname.startsWith("/api/swagger")) {
     const res = NextResponse.next();
     return res;
-  }
-
-  // 1) Za API rute (nakon CORS-a dodaj security header-e)
-  if (pathname.startsWith("/api")) {
-    const res = NextResponse.next();
-    return addSecurityHeaders(res);
   }
 
   // 2) Štiti page rute
