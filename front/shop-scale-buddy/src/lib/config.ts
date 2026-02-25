@@ -26,10 +26,5 @@ export function setApiBaseUrl(url: string): void {
 }
 
 export function isApiConfigured(): boolean {
-  const envUrl = import.meta.env.VITE_API_URL || process.env.NEXT_PUBLIC_API_URL;
-  if (envUrl) return true;
-  if (typeof window !== 'undefined' && window.localStorage) {
-    return Boolean(window.localStorage.getItem(STORAGE_KEY));
-  }
-  return false;
+  return true;
 }
