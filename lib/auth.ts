@@ -16,7 +16,7 @@ export async function verifyAuth(req: NextRequest) {
 
     const verified = await jwtVerify(token, JWT_SECRET);
     return verified.payload;
-  } catch (_) {
+  } catch {
     return null;
   }
 }
