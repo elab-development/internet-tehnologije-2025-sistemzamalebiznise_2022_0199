@@ -12,9 +12,14 @@ const ALLOWED_ORIGINS = [
   "http://172.17.240.1:8080",
   "http://172.17.240.1:8081",
   "https://shop-scale-buddy.lovable.app",
+  // Dodato za produkciju:
+  "https://internet-tehnologije-2025-9nvi.onrender.com",
+  "https://internet-tehnologije-2025-sistemzam.vercel.app/login",
+  "https://internet-tehnologije-2025-sistemzamalebiznise-2022-0-5gi4kmeq3.vercel.app",
 ];
 
 export function addCorsHeaders(req: NextRequest, res: NextResponse) {
+
   const origin = req.headers.get("origin");
 
   if (origin && ALLOWED_ORIGINS.includes(origin)) {
