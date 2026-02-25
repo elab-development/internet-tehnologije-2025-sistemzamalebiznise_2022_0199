@@ -3,7 +3,7 @@ const STORAGE_KEY = 'API_BASE_URL';
 
 export function getApiBaseUrl(): string {
   // 1. Prefer environment variable (prod)
-  const envUrl = import.meta.env.VITE_API_URL || process.env.NEXT_PUBLIC_API_URL;
+  const envUrl = import.meta.env.VITE_API_URL;
   if (envUrl) return envUrl.replace(/\/+$/, '');
   // 2. Try localStorage (test/dev)
   if (typeof window !== 'undefined' && window.localStorage) {

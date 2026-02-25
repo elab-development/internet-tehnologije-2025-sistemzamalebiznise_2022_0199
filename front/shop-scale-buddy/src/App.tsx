@@ -17,38 +17,64 @@ import DetaljiNarudzbenice from "@/pages/DetaljiNarudzbenice";
 import Korisnici from "@/pages/Korisnici";
 import Analitika from "@/pages/Analitika";
 import NotFound from "@/pages/NotFound";
+import { useEffect } from "react";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route element={<ProtectedRoute />}>
-              <Route element={<Layout />}>
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/proizvodi" element={<Proizvodi />} />
-                <Route path="/dobavljaci" element={<Dobavljaci />} />
-                <Route path="/narudzbenice" element={<Narudzbenice />} />
-                <Route path="/narudzbenice/nova" element={<NovaNarudzbenica />} />
-                <Route path="/narudzbenice/:id" element={<DetaljiNarudzbenice />} />
-                <Route path="/korisnici" element={<Korisnici />} />
-                <Route path="/analitika" element={<Analitika />} />
+const App = () => {
+  useEffect(() => {
+    const testApiUrl = import.meta.env.VITE_API_URL;
+    if (!testApiUrl) {
+      console.warn("VITE_API_URL nije definisan u okruženju!");
+      return;
+    }
+    fetch(testApiUrl + "/api/test", { method: "GET" })
+      .then((res) => {
+        if (res.ok) {
+          console.log("Konekcija sa Render backendom uspešna!");
+        } else {
+          console.warn("Backend je dostupan, ali odgovor nije OK:", res.status);
+        }
+      })
+      .catch((err) => {
+        if (err instanceof TypeError && err.message.includes("CORS")) {
+          console.error("CORS greška:", err);
+        } else {
+          console.error("Greška pri konekciji:", err);
+        }
+      });
+  }, []);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AuthProvider>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route element={<ProtectedRoute />}>
+                <Route element={<Layout />}>
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/proizvodi" element={<Proizvodi />} />
+                  <Route path="/dobavljaci" element={<Dobavljaci />} />
+                  <Route path="/narudzbenice" element={<Narudzbenice />} />
+                  <Route path="/narudzbenice/nova" element={<NovaNarudzbenica />} />
+                  <Route path="/narudzbenice/:id" element={<DetaljiNarudzbenice />} />
+                  <Route path="/korisnici" element={<Korisnici />} />
+                  <Route path="/analitika" element={<Analitika />} />
+                </Route>
               </Route>
-            </Route>
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </AuthProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;
