@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
     const { payload } = await jose.jwtVerify(token, secret);
 
     return addCorsHeaders(req, NextResponse.json({ user: payload }, { status: 200 }));
-  } catch (error) {
+  } catch (_) {
     return addCorsHeaders(req, NextResponse.json({ error: "Nevalidan token" }, { status: 401 }));
   }
 }

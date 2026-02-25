@@ -83,7 +83,7 @@ export async function PATCH(
     let body: any = {};
     try {
       body = await req.json();
-    } catch (err) {
+    } catch (_) {
       return addCorsHeaders(req, NextResponse.json(
         { error: "Neispravan JSON body (pošalji npr. {\"uloga\":\"RADNIK\"})" },
         { status: 400 }

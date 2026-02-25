@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
     let body: any = {};
     try {
       body = await req.json();
-    } catch (error) {
+    } catch (_) {
       return addCorsHeaders(req, NextResponse.json(
         { error: "Neispravan JSON body (pošalji email i lozinka)" },
         { status: 400 }

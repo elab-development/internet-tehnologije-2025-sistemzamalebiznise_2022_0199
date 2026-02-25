@@ -4,7 +4,7 @@ import { verifyAuth } from './auth';
 describe('verifyAuth', () => {
   it('returns null if no token', async () => {
     const req = { headers: { get: () => null }, cookies: { get: () => null } };
-    // @ts-ignore
+    // @ts-expect-error
     const result = await verifyAuth(req);
     expect(result).toBeNull();
   });
