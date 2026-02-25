@@ -1,18 +1,15 @@
-const STORAGE_KEY = 'API_BASE_URL';
 
 export function getApiBaseUrl(): string {
-  const saved = localStorage.getItem(STORAGE_KEY);
-  if (saved) return saved;
-  // Ako se pristupa sa druge masine na mrezi, koristi IP umesto localhost
-  const host = window.location.hostname;
-  return `http://${host}:3000`;
+  // Prefer environment variable set by Vercel or .env file
+  const envUrl = import.meta.env.VITE_API_URL || process.env.NEXT_PUBLIC_API_URL;
+  if (envUrl) return envUrl.replace(/\/+$/, '');
+  throw new Error('API base URL is not configured!');
 }
 
-export function setApiBaseUrl(url: string): void {
-  const cleaned = url.replace(/\/+$/, '');
-  localStorage.setItem(STORAGE_KEY, cleaned);
+export function setApiBaseUrl(_url: string): void {
+  // No-op: API URL should be set via environment variable
 }
 
 export function isApiConfigured(): boolean {
-  return true;
+  return Boolean(import.meta.env.VITE_API_URL || process.env.NEXT_PUBLIC_API_URL);
 }
