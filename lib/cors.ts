@@ -18,16 +18,17 @@ const ALLOWED_ORIGINS = [
   "https://internet-tehnologije-2025-sistemzamalebiznise-2022-0-5gi4kmeq3.vercel.app",
 ];
 
-export function addCorsHeaders(req: NextRequest, res: NextResponse) {
-
+export function addCorsHeaders(req: NextRequest, res: NextResponse): NextResponse {
   const origin = req.headers.get("origin");
-
-  if (origin && ALLOWED_ORIGINS.includes(origin)) {
+  const isAllowedOrigin = (origin: string | null) => {
+    if (!origin) return false;
+    return ALLOWED_ORIGINS.includes(origin) || origin.endsWith(".vercel.app");
+  };
+  if (origin && isAllowedOrigin(origin)) {
     res.headers.set("Access-Control-Allow-Origin", origin);
     res.headers.set("Vary", "Origin");
     res.headers.set("Access-Control-Allow-Credentials", "true");
   }
-
   res.headers.set(
     "Access-Control-Allow-Methods",
     "GET,POST,PUT,PATCH,DELETE,OPTIONS"
@@ -36,11 +37,10 @@ export function addCorsHeaders(req: NextRequest, res: NextResponse) {
     "Access-Control-Allow-Headers",
     "Content-Type, Authorization"
   );
-
   return res;
 }
 
-export function handleOptions(req: NextRequest) {
+export function handleOptions(req: NextRequest): NextResponse {
   const res = new NextResponse(null, { status: 204 });
   return addCorsHeaders(req, res);
 }
