@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server";
 
 const ALLOWED_ORIGINS = [
   "http://localhost:3000",
+  "http://localhost:3001",
   "http://localhost:8080",
   "http://localhost:8081",
   "http://172.20.10.4:8080",
