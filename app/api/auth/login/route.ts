@@ -119,8 +119,8 @@ export async function POST(req: NextRequest) {
 
     response.cookies.set("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      secure: true, // UVEK true za cross-site
+      sameSite: "none", // UVEK 'none' za cross-site
       maxAge: 86400,
       path: "/",
     });
