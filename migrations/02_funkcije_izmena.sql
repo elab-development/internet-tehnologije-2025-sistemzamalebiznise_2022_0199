@@ -84,3 +84,16 @@ BEGIN
     narudzbenica.status;
 END;
 $$ LANGUAGE plpgsql;
+
+-- Ažuriranje svih proizvoda da imaju validne cene
+UPDATE proizvod 
+SET 
+  cena = COALESCE(prodajna_cena, cena, 0),
+  nabavna_cena = COALESCE(nabavna_cena, cena, 0),
+  prodajna_cena = COALESCE(prodajna_cena, cena, 0)
+WHERE cena IS NULL OR nabavna_cena IS NULL OR prodajna_cena IS NULL;
+
+-- Provera da nema NULL vrednosti
+SELECT COUNT(*) as proizvoda_sa_null_cenom 
+FROM proizvod 
+WHERE cena IS NULL OR nabavna_cena IS NULL OR prodajna_cena IS NULL;

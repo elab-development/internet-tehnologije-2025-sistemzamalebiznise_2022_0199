@@ -13,9 +13,9 @@ import type {
   TipNarudzbenice,
 } from '@/lib/types';
 
-// ============================================================================
+// 
 // 1. STATUS_LABELS testovi
-// ============================================================================
+// 
 describe('STATUS_LABELS', () => {
   it('sadrži labele za sve statuse', () => {
     const statusi: StatusNarudzbenice[] = [
@@ -38,9 +38,9 @@ describe('STATUS_LABELS', () => {
   });
 });
 
-// ============================================================================
+// 
 // 2. ULOGA_LABELS testovi
-// ============================================================================
+// 
 describe('ULOGA_LABELS', () => {
   it('sadrži sve tri uloge', () => {
     expect(ULOGA_LABELS.VLASNIK).toBe('Vlasnik');
@@ -49,9 +49,9 @@ describe('ULOGA_LABELS', () => {
   });
 });
 
-// ============================================================================
+// 
 // 3. NABAVKA tranzicije testovi
-// ============================================================================
+// 
 describe('NABAVKA_TRANSITIONS', () => {
   it('KREIRANA može preći u U_TRANSPORTU ili OTKAZANA', () => {
     expect(NABAVKA_TRANSITIONS.KREIRANA).toContain('U_TRANSPORTU');
@@ -79,9 +79,9 @@ describe('NABAVKA_TRANSITIONS', () => {
   });
 });
 
-// ============================================================================
+// 
 // 4. PRODAJA tranzicije testovi
-// ============================================================================
+// 
 describe('PRODAJA_TRANSITIONS', () => {
   it('KREIRANA može preći u STORNIRANA ili ZAVRSENA', () => {
     expect(PRODAJA_TRANSITIONS.KREIRANA).toContain('STORNIRANA');
@@ -101,9 +101,9 @@ describe('PRODAJA_TRANSITIONS', () => {
   });
 });
 
-// ============================================================================
+// 
 // 5. getTransitionsForType helper testovi
-// ============================================================================
+// 
 describe('getTransitionsForType', () => {
   it('vraća NABAVKA tranzicije za tip NABAVKA', () => {
     const result = getTransitionsForType('NABAVKA');
@@ -122,9 +122,9 @@ describe('getTransitionsForType', () => {
   });
 });
 
-// ============================================================================
+// 
 // 6. VALID_TRANSITIONS alias test
-// ============================================================================
+// 
 describe('VALID_TRANSITIONS', () => {
   it('je alias za ALLOWED_STATUS_TRANSITIONS', () => {
     expect(VALID_TRANSITIONS).toBe(ALLOWED_STATUS_TRANSITIONS);

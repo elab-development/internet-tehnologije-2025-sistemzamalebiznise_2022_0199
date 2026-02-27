@@ -53,4 +53,3 @@ export async function GET(req: NextRequest) {
     return addCorsHeaders(req, NextResponse.json({ error: "Nevalidan token" }, { status: 401 }));
   }
 }
-

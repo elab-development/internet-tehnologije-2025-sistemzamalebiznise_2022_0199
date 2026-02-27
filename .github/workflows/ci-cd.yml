@@ -134,9 +134,6 @@ jobs:
         if: always()
         run: docker compose down -v
 
-  # ========================================================================
-  # JOB 5: Deploy na Cloud (samo za main granu)
-  # ========================================================================
   deploy:
     name: Deploy na Cloud
     runs-on: ubuntu-latest
